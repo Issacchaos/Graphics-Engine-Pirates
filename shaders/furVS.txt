@@ -1,0 +1,42 @@
+attribute vec4 position;
+attribute vec4 texcoord;
+attribute vec4 normal;
+
+uniform mat4 worldMatrix;
+uniform mat4 viewProjMatrix;
+uniform mat4 trans;
+
+uniform float furheight;
+uniform vec3 gravity;
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+varying vec4 v_tangent;
+varying float v_diffuse;
+
+#define MAX_LIGHTS 4
+uniform vec4 lightPos[MAX_LIGHTS];
+uniform vec4 lightColor[MAX_LIGHTS];
+
+void main(){
+    vec4 p = position;
+	p.w = 1.0;
+	vec4 n = normal * worldMatrix;
+	float ff = position.w;
+	p.xyz += ff * furheight * n.xyz;
+	p *= worldMatrix;
+	p.xyz += ff*ff*ff*gravity;
+	gl_Position = p * viewProjMatrix;
+	
+	v_diffuse = 0.0;
+	for(int i=0;i<MAX_LIGHTS;++i)
+	{
+        vec3 L = normalize(lightPos[i].xyz - p.xyz);
+		float tmp = clamp(dot(L, n.xyz), 0.0, 1.0);
+		v_diffuse += tmp * lightColor[i].rgb;
+	}
+	v_diffuse = mix(0.3 * v_diffuse, v_diffuse, ff);
+	v_texcoord=texcoord;
+	v_worldPos = p * trans;
+}

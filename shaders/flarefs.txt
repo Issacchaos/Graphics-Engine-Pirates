@@ -1,0 +1,12 @@
+precision highp float;
+uniform sampler2D FBO2;
+uniform sampler2D flaretex;
+uniform float alphascale;
+varying vec4 v_texcoord;
+
+void main(){
+    vec4 fc = texture2D(flaretex, v_texcoord.st);
+	vec4 alpha = texture2D(FBO2,vec2(0.5,0.5));
+    gl_FragColor.rgb = fc.rgb;
+    gl_FragColor.a = fc.a * alpha.r * alphascale;
+ }

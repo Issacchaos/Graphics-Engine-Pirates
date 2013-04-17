@@ -1,0 +1,45 @@
+precision highp float;
+
+uniform sampler2D basetexture;
+uniform sampler2D emittexture;
+uniform sampler2D spectexture;
+
+uniform vec4 diffusemtl;
+uniform vec4 specmtl;   //alpha=shininess
+
+uniform vec4 attenuation;
+
+uniform vec4 eyePos;
+uniform float fogNear;
+uniform float fogDelta;
+uniform vec4 fogColor;
+uniform mat4 worldMatrix;
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+varying float v_diffuse;
+
+#define MAX_LIGHTS 4
+
+uniform vec4 lightPos[MAX_LIGHTS];
+uniform vec4 lightColor[MAX_LIGHTS];
+
+void main(){  
+    vec3 V = eyePos.xyz - v_worldPos.xyz;
+    float eyeDistance = length(V);
+    V=1.0/eyeDistance*V;
+    
+    float fogpct = ( eyeDistance - fogNear ) / (fogDelta);
+    fogpct = clamp(fogpct,0.0,1.0);
+    
+    vec4 texc = texture2D(basetexture,v_texcoord.st);
+    vec4 basecolor;
+
+    basecolor.rgb = v_diffuse * texc.rgb;
+    basecolor.a = texc.a;
+    
+    vec4 c = mix(basecolor,fogColor,fogpct);
+    
+    gl_FragColor = c;
+}

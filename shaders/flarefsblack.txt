@@ -1,0 +1,11 @@
+precision highp float;
+
+
+uniform vec4 fbocolor;
+
+
+void main(){
+    
+    gl_FragColor.rgb = fbocolor.rgb;
+    gl_FragColor.a = fbocolor.a;
+ }
