@@ -45,6 +45,11 @@ var mTimer= Date.now();
 var cBalls = [];
 var Lsmoke, Rsmoke; 
 
+//Environment Maps
+var envmapprog;
+var cubetex;
+var chromeship;
+
 function main(){
     cvs = document.getElementById("cvs");
     gl = tdl.webgl.setupWebGL(cvs,{stencil:true,alpha:false});
@@ -53,7 +58,7 @@ function main(){
 	//Regular shit
 	prog1 = new tdl.programs.Program(loader,"shaders/vs.txt","shaders/fs.txt");
 	prog2 = new tdl.programs.Program(loader,"shaders/watervs.txt","shaders/waterfs.txt"); // for water
-    ship = new Ship(loader);
+    ship = new Ship(loader, true);
     ocean = new Ocean(loader);
 	nessie = new Nessie(loader);
 	
@@ -75,6 +80,11 @@ function main(){
 	//Shooting
 	for (var i = 0; i < 7; i++)
 		cBalls.push(new CannonBall(loader,[0,0,0,1],0,0));
+	
+	//Environment Maps
+	envmapprog = new tdl.programs.Program(loader, "shaders/vs.txt", "shaders/envMapFS.txt");
+	cubetex = new tdl.CubeMap(loader, {urls:["assets/cubePX.png", "assets/cubeNX.png", "assets/cubePY.png", "assets/cubeNY.png", "assets/cubePZ.png", "assets/cubeNZ.png"]});
+	chromeship = new Ship(loader, true);
 	
     loader.finish();
 }
@@ -283,7 +293,7 @@ function dss_keep(){
 function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
     
-    prog1.use();
+    /*prog1.use();
 	prog1.setUniform("trans", tdl.identity());
 	prog1.setUniform("reflMatrix", tdl.identity()); // refl
 	
@@ -299,53 +309,21 @@ function draw(){
     prog1.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
     dss_keep(); // refl
-    camera.draw(prog1);
-    ship.draw(prog1);
-	nessie.draw(prog1,1);
-	Shooting();
-    gl.depthMask(true);
+    camera.draw(prog1);*/
+    
+	if(document.getElementById('environ').checked) {
+		drawShip(chromeship, envmapprog, true);
+	}
+	else{
+		drawShip(ship, envmapprog, true);
+	}
 	
+	
+	/*nessie.draw(prog1,1);
 	if(document.getElementById('fur').checked) {
 		Fur();
-	}
-    
+	}*/
 	
-	dss_repl(); //refl
-	gl.colorMask(false, false, false, false); // refl
-	prog1.use();
-    prog1.setUniform("worldMatrix",tdl.identity());
-	
-	gl.colorMask(true,true,true,true); // refl
-	gl.clear(gl.DEPTH_BUFFER); // refl
-	dss_equal(); // refl
-	// refl
-	var Nx = ocean.M.submeshes[0][0].vdata[8];
-	var Ny = ocean.M.submeshes[0][0].vdata[9];
-	var Nz = ocean.M.submeshes[0][0].vdata[10];	
-	var oPos = [ocean.M.submeshes[0][0].vdata[0],ocean.M.submeshes[0][0].vdata[1],
-				ocean.M.submeshes[0][0].vdata[2],ocean.M.submeshes[0][0].vdata[3]];
-				
-	var onormal = [Nx, Ny, Nz, 1];
-	var D = tdl.dot(-onormal, oPos);
-	var oceanNormal = [Nx, Ny, Nz, D];
-	
-	prog1.setUniform("mirrorPos", oceanNormal);
-	
-				
-	prog1.setUniform("reflMatrix", [	-2*Nx*Nx+1,		-2*Nx*Ny, 		-2*Nx*Nz, 		0,
-						-2*Ny*Nx,		-2*Ny*Ny+1,		-2*Ny*Nz,		0,
-						-2*Nz*Nx, 		-2*Nz*Ny, 		-2*Nz*Nz+1,		0,
-						-2*D*Nx, 		-2*D*Ny,		-2*D*Nz, 		1,]);
-										
-	gl.frontFace(gl.CW);	
-	ship.draw(prog1);
-	dss_nodepth();
-	
-	
-	gl.enable(gl.DEPTH_TEST);
-
-	 
-	gl.frontFace(gl.CCW);prog1.setUniform("worldMatrix",tdl.identity());
 	
 	prog2.use();
 	prog2.setUniform("trans", tdl.identity());
@@ -364,6 +342,7 @@ function draw(){
 	camera.draw(prog2);
     ocean.draw(prog2, camera);
 	
+	Shooting();
 	
 	LensFlare();
     
@@ -496,6 +475,23 @@ function LensFlare(){
 }
 
 function Shooting(){
+
+	prog1.use();
+	prog1.setUniform("trans", tdl.identity());
+	prog1.setUniform("reflMatrix", tdl.identity()); // refl
+	
+    prog1.setUniform("lightPos",
+        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
+    );
+    prog1.setUniform("lightColor",
+        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
+    );
+    
+    prog1.setUniform("fogNear",50);
+    prog1.setUniform("fogDelta", 30);
+    prog1.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
+	camera.draw(prog1);
 	for(var b = 0; b < cBalls.length; ++b)
 	{
 		if(cBalls[b].Alive){
@@ -504,4 +500,73 @@ function Shooting(){
 		}
 	}
 	pSystem.draw(camera.viewProjMatrix,tdl.identity(),tdl.math.transpose(camera.viewProjMatrix));
+	gl.depthMask(true);
+}
+
+function drawShip(theShip, prog, chrome)
+{
+	prog.use();
+	prog.setUniform("trans", tdl.identity());
+	prog.setUniform("reflMatrix", tdl.identity()); // refl
+	
+    prog.setUniform("lightPos",
+        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
+    );
+    prog.setUniform("lightColor",
+        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
+    );
+    
+    prog.setUniform("fogNear",80);
+    prog.setUniform("fogDelta", 30);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    prog.setUniform("attenuation",[1,0.0,0.0001,0]);
+	dss_keep(); // refl
+    
+	prog.setUniform("worldMatrix",tdl.identity());
+	
+	// If the ship being drawn is the chrome ship, give the fs a cubetex to work with
+	if (chrome)
+	{
+		prog.setUniform("cubetexture", cubetex);
+	}
+	camera.draw(prog);
+
+	theShip.draw(prog);
+	
+	
+	dss_repl(); //refl
+	gl.colorMask(false, false, false, false); // refl
+	
+    prog.setUniform("worldMatrix",tdl.identity());
+	
+	gl.colorMask(true,true,true,true); // refl
+	gl.clear(gl.DEPTH_BUFFER); // refl
+	dss_equal(); // refl
+
+	var Nx = ocean.M.submeshes[0][0].vdata[8];
+	var Ny = ocean.M.submeshes[0][0].vdata[9];
+	var Nz = ocean.M.submeshes[0][0].vdata[10];	
+	var oPos = [ocean.M.submeshes[0][0].vdata[0],ocean.M.submeshes[0][0].vdata[1],
+				ocean.M.submeshes[0][0].vdata[2],ocean.M.submeshes[0][0].vdata[3]];
+				
+	var onormal = [Nx, Ny, Nz, 1];
+	var D = tdl.dot(-onormal, oPos);
+	var oceanNormal = [Nx, Ny, Nz, D];
+	prog.setUniform("mirrorPos", oceanNormal);
+	
+				
+	prog.setUniform("reflMatrix", [	-2*Nx*Nx+1,		-2*Nx*Ny, 		-2*Nx*Nz, 		0,
+						-2*Ny*Nx,		-2*Ny*Ny+1,		-2*Ny*Nz,		0,
+						-2*Nz*Nx, 		-2*Nz*Ny, 		-2*Nz*Nz+1,		0,
+						-2*D*Nx, 		-2*D*Ny,		-2*D*Nz, 		1,]);
+										
+	gl.frontFace(gl.CW);	
+	
+	theShip.draw(prog);
+	dss_nodepth();
+	
+	gl.enable(gl.DEPTH_TEST);
+ 
+	gl.frontFace(gl.CCW);
+	prog.setUniform("worldMatrix",tdl.identity());
 }

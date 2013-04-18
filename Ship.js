@@ -1,7 +1,13 @@
 "use strict";
 
-function Ship(loader){
-    this.M = new SuperMesh(loader,"assets/ship.spec.mesh");
+function Ship(loader, chrome){
+    this.chrome = (chrome? true:false);
+    if (this.chrome)
+    {
+    	    this.M = new SuperMesh(loader,"assets/chromeship.spec.mesh");
+    }
+    else
+    	    this.M = new SuperMesh(loader,"assets/ship.spec.mesh");
     this.pos = [0,1,0,1];
     this.facing = [1,0,0,0];
     this.zeroanglefacing = [1,0,0,0];
@@ -34,3 +40,31 @@ Ship.prototype.draw = function(prog){
     prog.setUniform("worldMatrix",this.RT);
     this.M.draw(prog);
 }
+
+// Set the postion and rotation at a specific position and rotation
+Ship.prototype.setPosRot = function(p, a){
+    if (p.length != 4)
+    {
+    	    this.pos = [0,1,0,1];
+    }
+    else
+    {
+    	    this.pos = p;
+    }
+    
+    if (a < 0 && a > 360)
+    {
+    	    this.angle = 0;
+    }
+    else
+    {
+    	    this.angle = a;
+    }
+    
+    this.R = tdl.axisRotation( [0,1,0],tdl.degToRad(this.angle));
+    this.facing = tdl.mul( this.zeroanglefacing , this.R);
+    this.T = tdl.translation(this.pos);
+    this.RT = tdl.mul(this.R,this.T);
+}
+
+
