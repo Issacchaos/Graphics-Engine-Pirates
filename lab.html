@@ -20,7 +20,7 @@
 	<table align="center">
 	<tr>
 		<td colspan="2">
-			<h1 align="center">Jim's Wonder Emporium of Graphical Technology<h1>
+			<!--<h1 align="center">Jim's Wonder Emporium of Graphical Technology<h1>-->
 		</td>
 	</tr>
 	<tr>
@@ -31,12 +31,19 @@
 	<tr valign="top">
 		<td id="radio">
 			<p>Optional add-ons: Click on one to add</p>
+			<h5>Environment</h5>
 			<input type="radio" id="blur" name="group1" /> Blur <br>
 			<input type="radio" id="hdr"  name="group1"/> HDR <br>
-			<input type="radio" id="noise"  name="group1"/> Camo <br>
-			<input type="radio" id="fur"  name="group1"/> Fur <br>
-			<input type="radio" id="collision"  name="group1"/> Collision <br>
-			<input type="radio" id="environ" name="group1"/> Environment Maps <br>
+			<input type="radio" id="shadows" name="group1"/> Shadows <br>
+			<input type="radio" id="none" name="group1" checked="checked"/> None <br>
+			<h5>Ship</h5>
+			<input type="checkbox" id="collision"  name="group1"/> Collision <br>
+			<input type="radio" id="noise"  name="group2"/> Camo <br>
+			<input type="radio" id="environ" name="group2"/> Environment Maps <br>
+			<input type="radio" id="none" name="group2" checked="checked"/> None <br>
+			<h5>Nessie</h5>
+			<input type="radio" id="fur"  name="group3"/> Fur <br>
+			<input type="radio" id="none" name="group3" checked="checked"/> None <br>
 		</td>
 		<td>
 			<canvas id="cvs" width=600 height=600></canvas>
