@@ -167,18 +167,46 @@ function update(){
     if( keys['A'] ){
         ship.turn(0.1*elapsed);
         need_camera_update=true;
+		
+		//Calling Hit Detection
+	
+		if(document.getElementById('collision').checked) {
+			HitDetection(ship,nessie,13,13);
+		}
+		
     }
     if( keys['D']){
         ship.turn(-0.1*elapsed);
         need_camera_update=true;
+		
+		//Calling Hit Detection
+	
+		if(document.getElementById('collision').checked) {
+			HitDetection(ship,nessie,13,13);
+		}
+		
     }
     if( keys['W']){
         ship.walk(0.01*elapsed);
         need_camera_update=true;
+		
+		//Calling Hit Detection
+	
+		if(document.getElementById('collision').checked) {
+			HitDetection(ship,nessie,13,13);
+		}
+		
     }
     if( keys['S']){
         ship.walk(-0.01*elapsed);
         need_camera_update=true;
+		
+		//Calling Hit Detection
+	
+		if(document.getElementById('collision').checked) {
+			HitDetection(ship,nessie,13,13);
+		}
+		
     }
 
     if(keys['I'])
