@@ -17,23 +17,33 @@
 		<script type="text/javascript" src="lab.js"></script>
 	</head>
 	<body style="background: black" onload="main();">
-		<!--<h1 align="center">Jim's Wonder Emporium of Graphical Technology<h1>-->
-		<h3>Features already included: Water (infinitude, depth, transparency), Reflection, Lens Flare, Shooting (particle system)</h3>
-		<div id="radio" align="left">
+	<table align="center">
+	<tr>
+		<td colspan="2">
+			<h1 align="center">Jim's Wonder Emporium of Graphical Technology<h1>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<h3>Features already included: Water (infinitude, depth, transparency), Reflection, Lens Flare, Shooting (particle system)</h3>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td id="radio">
 			<p>Optional add-ons: Click on one to add</p>
 			<input type="radio" id="blur" name="group1" /> Blur <br>
 			<input type="radio" id="hdr"  name="group1"/> HDR <br>
-			<input type="radio" id="billboard"  name="group1"/> Billboards <br>
-			<input type="radio" id="noise"  name="group1"/> Noise <br>
+			<input type="radio" id="noise"  name="group1"/> Camo <br>
 			<input type="radio" id="fur"  name="group1"/> Fur <br>
 			<input type="radio" id="collision"  name="group1"/> Collision <br>
 			<input type="radio" id="environ" name="group1"/> Environment Maps <br>
-		</div>
-		<div align="center">
+		</td>
+		<td>
 			<canvas id="cvs" width=600 height=600></canvas>
-		</div>
-		
+		</td>
+	</tr>
 		
 
+	</table>
 	</body>
 </HTML>

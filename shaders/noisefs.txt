@@ -1,0 +1,131 @@
+precision highp float;
+
+
+uniform sampler2D G;
+uniform sampler2D P;
+uniform sampler2D firetex;
+uniform float time;
+
+uniform mat4 worldMatrix;
+uniform vec3 objmin;
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+varying vec4 v_position;
+
+#define noisescale 10.0
+#define MAX_LIGHTS 4
+#define scale 16.0
+#define tfactor 0.1
+
+uniform vec4 lightPos[MAX_LIGHTS];
+uniform vec4 lightColor[MAX_LIGHTS];
+
+float ci(float t){
+    return t*t*(3.0-2.0*t);
+}
+
+vec3 Gfetch(float idx){
+    vec2 tc = vec2( float(idx)/256.0 , 0.0 );
+    vec3 v =texture2D(G,tc).xyz;
+    v = v-vec3(0.5,0.5,0.5);
+    v = 2.0*v;
+    return v;
+}
+
+float Pfetch(float idx){
+    vec2 tc = vec2( idx/256.0 , 0.0 );
+    float tmp = texture2D(P,tc).r;
+    return floor(tmp*255.0);
+}
+
+vec3 gradient3(vec3 p){
+    float tmp1 = Pfetch(mod(p.z,256.0));
+    float tmp2 = Pfetch(mod(p.y+tmp1,256.0));
+    return Gfetch( mod((p.x+tmp2),256.0));    
+}
+
+float noise3(vec3 p){
+    p = noisescale*p;
+    int i;
+    vec3 L=floor(p);
+    vec3 H=ceil(p);
+    vec3 a = vec3(L.x,H.y,H.z);
+    vec3 b = vec3(L.x,H.y,L.z);  
+    vec3 c = vec3(H.x,H.y,H.z);
+    vec3 d = vec3(H.x,H.y,L.z);
+    vec3 e = vec3(L.x,L.y,H.z);
+    vec3 f = vec3(H.x,L.y,H.z);
+    vec3 g = vec3(H.x,L.y,L.z);
+    vec3 h = vec3(L.x,L.y,L.z);
+    
+    vec3 va = p - a;
+    vec3 vb = p - b;
+    vec3 vc = p - c;
+    vec3 vd = p - d;
+    vec3 ve = p - e;
+    vec3 vf = p - f;
+    vec3 vg = p - g;
+    vec3 vh = p - h;
+
+    vec3 ga = gradient3(a);
+    vec3 gb = gradient3(b);
+    vec3 gc = gradient3(c);
+    vec3 gd = gradient3(d);
+    vec3 ge = gradient3(e);
+    vec3 gf = gradient3(f);
+    vec3 gg = gradient3(g);
+    vec3 gh = gradient3(h);
+
+    float da = dot(ga,va);
+    float db = dot(gb,vb);
+    float dc = dot(gc,vc);
+    float dd = dot(gd,vd);
+    float de = dot(ge,ve);
+    float df = dot(gf,vf);
+    float dg = dot(gg,vg);
+    float dh = dot(gh,vh);
+
+    float pct = ci(fract(p.x));
+    float avg_ac = mix(da,dc,pct);
+    float avg_ef = mix(de,df,pct);
+    float avg_bd = mix(db,dd,pct);
+    float avg_hg = mix(dh,dg,pct);
+    pct = ci(fract(p.y));
+    float avg_front = mix(avg_ef,avg_ac,pct);
+    float avg_back = mix(avg_hg,avg_bd,pct);
+    pct=ci(fract(p.z));
+    float avg = mix(avg_back,avg_front,pct);
+    return avg;
+}
+
+
+void main(){
+
+    //obj space location
+    vec3 p = v_position.xyz;
+    //get rid of negative values:
+    //offset so bbox min @ origin
+    p -= objmin.xyz;
+    //our noise function
+    float n = noise3(p);
+  
+    //CAMO
+    vec4 camoColor1 = vec4(0.2,0.5,0.2,1.0);
+    vec4 camoColor2 = vec4(0.1,0.32,0.14,1.0);
+	vec4 camoColor3 = vec4(0.0,0.0,0.0,1.0);
+	vec4 camoColor4 = vec4(0.2,0.15,0.1,1.0);
+    
+    if(n < -0.5){
+		gl_FragColor = camoColor1;
+	}else if(n < 0.0 && n > -0.5){
+		gl_FragColor = camoColor2;
+	}else if(n > 0.0 && n < 0.5){
+		gl_FragColor = camoColor3;
+	}else{
+		gl_FragColor = camoColor4;
+	}
+    
+}
+

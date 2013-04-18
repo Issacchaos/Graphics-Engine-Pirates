@@ -51,6 +51,11 @@ var envmapprog;
 var cubetex;
 var chromeship;
 
+//Noise
+var noiseProg;
+var P, pArray; 
+var G, gArray;
+
 function main(){
     cvs = document.getElementById("cvs");
     gl = tdl.webgl.setupWebGL(cvs,{stencil:true,alpha:false});
@@ -87,6 +92,9 @@ function main(){
 	cubetex = new tdl.CubeMap(loader, {urls:["assets/cubePX.png", "assets/cubeNX.png", "assets/cubePY.png", "assets/cubeNY.png", "assets/cubePZ.png", "assets/cubeNZ.png"]});
 	chromeship = new Ship(loader, true);
 	
+	//Noise
+	noiseProg = new tdl.programs.Program(loader,"shaders/noisevs.txt","shaders/noisefs.txt");
+	
     loader.finish();
 }
 
@@ -95,8 +103,12 @@ function loaded(){
 	pSystem = new tdl.particles.ParticleSystem(gl, null, tdl.math.pseudoRandom);
 	Lsmoke = new setupSmoke(pSystem);
 	Rsmoke = new setupSmoke(pSystem);
-
-	currentShip = ship;
+	
+	//Noise
+	pArray = new Uint8Array(arrayShuff(256));
+	P = new tdl.ColorTexture( {width:256, height: 1, pixels: pArray, format: gl.LUMINANCE} );
+	gArray = new Uint8Array(randVec4(256));
+	G = new tdl.ColorTexture( {width:256, height: 1, pixels: gArray} );
 
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
@@ -179,6 +191,7 @@ function update(){
     
     if( keys['A'] ){
         ship.turn(0.1*elapsed);
+        chromeship.turn(0.1*elapsed);
         need_camera_update=true;
 		
 		//Calling Hit Detection
@@ -190,6 +203,7 @@ function update(){
     }
     if( keys['D']){
         ship.turn(-0.1*elapsed);
+        chromeship.turn(-0.1*elapsed);
         need_camera_update=true;
 		
 		//Calling Hit Detection
@@ -201,6 +215,7 @@ function update(){
     }
     if( keys['W']){
         ship.walk(0.01*elapsed);
+		chromeship.walk(0.01*elapsed);
         need_camera_update=true;
 		
 		//Calling Hit Detection
@@ -212,6 +227,7 @@ function update(){
     }
     if( keys['S']){
         ship.walk(-0.01*elapsed);
+		chromeship.walk(-0.01*elapsed);
         need_camera_update=true;
 		
 		//Calling Hit Detection
@@ -299,8 +315,10 @@ function draw(){
 	if(document.getElementById('environ').checked) {
 		drawShip(chromeship, envmapprog, true);
 	}
+	else if(document.getElementById('noise').checked) {
+		drawShip(ship, noiseProg, false);
+	}
 	else{
-		chromeship.pos = ship.pos;
 		drawShip(ship, prog1, false);
 	}
 	
@@ -471,39 +489,49 @@ function Shooting(){
 
 function drawShip(theShip, prog, chrome)
 {
-	prog.use();
-	prog.setUniform("trans", tdl.identity());
-	prog.setUniform("reflMatrix", tdl.identity()); // refl
-	
-    prog.setUniform("lightPos",
-        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
-    );
-    prog.setUniform("lightColor",
-        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
-    );
-    
-    prog.setUniform("fogNear",80);
-    prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
-    prog.setUniform("attenuation",[1,0.0,0.0001,0]);
-	dss_keep(); // refl
-    
-	prog.setUniform("worldMatrix",tdl.identity());
-	
-	// If the ship being drawn is the chrome ship, give the fs a cubetex to work with
-	if (chrome)
-	{
-		prog.setUniform("cubetexture", cubetex);
+	if(document.getElementById('noise').checked) {
+		prog.use();
+		prog.setUniform("reflMatrix", tdl.identity());
+		prog.setUniform("P", P);
+		prog.setUniform("G", G);
+		camera.draw(prog);
+		theShip.draw(prog);
+		prog.setUniform("objmin", theShip.bboxMin);
 	}
-	camera.draw(prog);
+	else{
+		prog.use();
+		prog.setUniform("trans", tdl.identity());
+		prog.setUniform("reflMatrix", tdl.identity()); // refl
+		
+		prog.setUniform("lightPos",
+			[10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
+		);
+		prog.setUniform("lightColor",
+			[1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
+		);
+		
+		prog.setUniform("fogNear",80);
+		prog.setUniform("fogDelta", 30);
+		prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+		prog.setUniform("attenuation",[1,0.0,0.0001,0]);
+		dss_keep(); // refl
+		
+		prog.setUniform("worldMatrix",tdl.identity());
+		
+		// If the ship being drawn is the chrome ship, give the fs a cubetex to work with
+		if (chrome)
+		{
+			prog.setUniform("cubetexture", cubetex);
+		}
+		camera.draw(prog);
 
-	theShip.draw(prog);
-	
-	
+		theShip.draw(prog);
+	}
+		
 	dss_repl(); //refl
 	gl.colorMask(false, false, false, false); // refl
 	
-    prog.setUniform("worldMatrix",tdl.identity());
+	prog.setUniform("worldMatrix",tdl.identity());
 	
 	gl.colorMask(true,true,true,true); // refl
 	gl.clear(gl.DEPTH_BUFFER); // refl
@@ -577,4 +605,50 @@ function drawOcean(){
 	prog2.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
 	camera.draw(prog2);
     ocean.draw(prog2, camera);
+}
+
+function randVec4(num){
+	var finalArray = [];
+	for( var z=0;z<256;z++ ){
+		var array = [];
+		for( var i=0; i<3; i++ ){
+			var negPos = Math.floor(Math.random()*2);
+			if(negPos == 1)
+				array.push(Math.floor(Math.random()*-100));
+			else
+				array.push(Math.floor(Math.random()*100));
+		}
+		array.push(0);
+		for( var y=0;y<4;y++ ){
+			finalArray.push(array[y]);
+		}
+	}
+	return finalArray;
+}
+
+function arrayShuff(num){
+    var array = [];
+	var total = num-1;
+    for(var i=0;i<num;i++){
+        array.push(i);
+    }
+	for(var i=0; i<num;i++){
+		var rand = Math.floor(Math.random() * total);
+		var temp = array[rand];
+		array[rand] = array[total];
+		array[total] = temp;
+		total--;
+	}
+
+    return array;
+}
+
+function drawNoise(){
+    noiseProg.use();
+    noiseProg.setUniform("P", P);
+    noiseProg.setUniform("G", G);
+    noiseProg.setUniform("firetex", fire);
+    camera.draw(noiseProg);
+    ship.draw(noiseProg);
+    noiseProg.setUniform("objmin", ship.bboxMin);
 }
