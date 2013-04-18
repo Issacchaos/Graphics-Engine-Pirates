@@ -2,7 +2,7 @@
 
 var gl;
 var keys={};
-var prog1, prog2, furprog;
+var prog1, prog2;
 var then;
 var t = 0.0; // time offset for waves
 var camera = new Camera({
@@ -15,6 +15,9 @@ var ship;
 var ocean;
 var nessie;
 var cvs;
+
+//Fur
+var furprog;
 
 /*STUFF FOR LENS FLARE*/
 var lensCamera = new Camera({
@@ -29,6 +32,18 @@ var fboFlare1, fboFlare2;
 var flare, ringflare, hexflare;
 var glowtex, ringtex, hextex, sunglow;
 var vb;
+
+//Firing cannonballs
+var pSystem;
+tdl.require('tdl.particles');
+tdl.require('tdl.fast');
+var ball;
+var canFire = true;
+var canFire2 = true;
+var nTimer=Date.now();
+var mTimer= Date.now();
+var cBalls = [];
+var Lsmoke, Rsmoke; 
 
 function main(){
     cvs = document.getElementById("cvs");
@@ -56,11 +71,20 @@ function main(){
 	
 	//Fur
 	furprog = new tdl.programs.Program(loader,"shaders/furVS.txt", "shaders/furFS.txt");
+
+	//Shooting
+	for (var i = 0; i < 7; i++)
+		cBalls.push(new CannonBall(loader,[0,0,0,1],0,0));
 	
     loader.finish();
 }
 
 function loaded(){
+	//Shooting
+	pSystem = new tdl.particles.ParticleSystem(gl, null, tdl.math.pseudoRandom);
+	Lsmoke = new setupSmoke(pSystem);
+	Rsmoke = new setupSmoke(pSystem);
+
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
     setTimeout(update,33);
@@ -102,6 +126,43 @@ function update(){
 	t += elapsed * 0.05;
     
     var need_camera_update = false;
+
+    if( keys['E'] && canFire == true){ // Placeholder key. Cannon left firing
+		canFire = false;
+		Rsmoke.smokeOneShot.trigger();
+		for(var b = 0; b < cBalls.length; b++)
+		{
+			if(!cBalls[b].Alive)
+			{
+				cBalls[b].reset(tdl.math.add(ship.pos, tdl.mul([3.26,1.12,1.34,1], ship.R)),  Date.now(), tdl.math.cross(ship.facing, [0,1,0,0] ));
+				nTimer = Date.now();
+				break;
+			}
+		}
+	}
+	
+	if ( keys['Q'] && canFire2 == true){ //Placeholder key. Cannon right firing
+		canFire2 = false;
+		
+		Lsmoke.smokeOneShot.trigger();
+		for(var b = 0; b < cBalls.length; b++)
+		{
+			if(!cBalls[b].Alive)
+			{
+				cBalls[b].reset(tdl.math.add(ship.pos, tdl.mul([3.26,1.12,-1.34,1], ship.R)),  Date.now(), tdl.math.negativeVector(tdl.math.cross(ship.facing, [0,1,0,0] )));
+				mTimer = Date.now();
+				break;
+			}
+		}
+	}
+	
+	if(!canFire && Date.now() - nTimer > 500){					
+		canFire = true;
+	}
+	
+	if(!canFire2 && Date.now() - mTimer > 500){		
+		canFire2 = true;
+	}
     
     if( keys['A'] ){
         ship.turn(0.1*elapsed);
@@ -160,6 +221,11 @@ function update_camera(){
         c = tdl.add(c,tdl.mul(2,ship.facing));
         camera.set_eye_coi(p,ship.pos,[0,1,0]);
     }
+    //Shooting
+    var Lpos = tdl.math.add(ship.pos, tdl.mul([3.26,1.12,-1.34,1],ship.R));
+	var Rpos = tdl.math.add(ship.pos, tdl.mul([3.26,1.12,1.34,1],ship.R));
+	Lsmoke.e.setTranslation(Lpos[0],Lpos[1],Lpos[2]);
+	Rsmoke.e.setTranslation(Rpos[0],Rpos[1],Rpos[2]);
 }
 
 function dss_keep(){
@@ -208,6 +274,8 @@ function draw(){
     camera.draw(prog1);
     ship.draw(prog1);
 	nessie.draw(prog1,1);
+	Shooting();
+    gl.depthMask(true);
 	
 	if(document.getElementById('fur').checked) {
 		Fur();
@@ -267,6 +335,7 @@ function draw(){
 	prog2.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
 	camera.draw(prog2);
     ocean.draw(prog2, camera);
+	
 	
 	LensFlare();
     
@@ -396,4 +465,15 @@ function LensFlare(){
 	}
 	gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
 
+}
+
+function Shooting(){
+	for(var b = 0; b < cBalls.length; ++b)
+	{
+		if(cBalls[b].Alive){
+			cBalls[b].update();
+			cBalls[b].draw(prog1);			
+		}
+	}
+	pSystem.draw(camera.viewProjMatrix,tdl.identity(),tdl.math.transpose(camera.viewProjMatrix));
 }

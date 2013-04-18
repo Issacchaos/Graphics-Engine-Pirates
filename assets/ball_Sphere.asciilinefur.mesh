@@ -1,0 +1,10 @@
+ASCII 06
+diffuse 0.64 0.64 0.64
+specular 0.5 0.5 0.5 96.078431
+basetexture shiptex.png
+emissiontexture 
+spectexture 
+bumpmap:
+bbox -1.000000 -0.999999 -0.999999 1.000000 1.000000 1.000000
+numv= 0
+numtris=0 (not written)

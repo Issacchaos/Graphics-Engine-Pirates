@@ -5,10 +5,13 @@
 	font-family:Verdana;
 	font-size: 18px;
 	border: solid 1px black;
-	
-	
 }
 
 h1 {
 	color: white;
+}
+
+h3 {
+	color: white;
+	text-align: center;
 }
