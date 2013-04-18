@@ -24,5 +24,9 @@
     //tdl.require("tdl.sync");
     tdl.require("tdl.textures");
     tdl.require("tdl.webgl");
+    
+    
+    tdl.require("tdl.vec");
+    tdl.require("tdl.unitsquare");
         
 })();

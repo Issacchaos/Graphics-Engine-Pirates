@@ -2510,6 +2510,7 @@ tdl.math.add = function(a,b){
         else if( a.length === 9 || a.length === 16 )
             return tdl.math.addMatrix(a,b);
     }
+    console.trace();
     throw(new Error("Can't add things of size "+a.length+" and "+b.length));
 }
 

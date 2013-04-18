@@ -15,6 +15,7 @@ var ship;
 var ocean;
 var nessie;
 var cvs;
+var currentShip;
 
 //Fur
 var furprog;
@@ -58,7 +59,7 @@ function main(){
 	//Regular shit
 	prog1 = new tdl.programs.Program(loader,"shaders/vs.txt","shaders/fs.txt");
 	prog2 = new tdl.programs.Program(loader,"shaders/watervs.txt","shaders/waterfs.txt"); // for water
-    ship = new Ship(loader, true);
+    ship = new Ship(loader, false);
     ocean = new Ocean(loader);
 	nessie = new Nessie(loader);
 	
@@ -94,6 +95,8 @@ function loaded(){
 	pSystem = new tdl.particles.ParticleSystem(gl, null, tdl.math.pseudoRandom);
 	Lsmoke = new setupSmoke(pSystem);
 	Rsmoke = new setupSmoke(pSystem);
+
+	currentShip = ship;
 
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
@@ -293,54 +296,17 @@ function dss_keep(){
 function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
     
-    /*prog1.use();
-	prog1.setUniform("trans", tdl.identity());
-	prog1.setUniform("reflMatrix", tdl.identity()); // refl
-	
-    prog1.setUniform("lightPos",
-        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
-    );
-    prog1.setUniform("lightColor",
-        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
-    );
-    
-    prog1.setUniform("fogNear",50);
-    prog1.setUniform("fogDelta", 30);
-    prog1.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
-    prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
-    dss_keep(); // refl
-    camera.draw(prog1);*/
-    
 	if(document.getElementById('environ').checked) {
 		drawShip(chromeship, envmapprog, true);
 	}
 	else{
-		drawShip(ship, envmapprog, true);
+		chromeship.pos = ship.pos;
+		drawShip(ship, prog1, false);
 	}
 	
+	drawNessie();
 	
-	/*nessie.draw(prog1,1);
-	if(document.getElementById('fur').checked) {
-		Fur();
-	}*/
-	
-	
-	prog2.use();
-	prog2.setUniform("trans", tdl.identity());
-	prog2.setUniform("lightPos",
-        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
-    );
-    prog2.setUniform("lightColor",
-        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
-    );
-	prog2.setUniform("fogNear",50);
-    prog2.setUniform("fogDelta", 30);
-    prog2.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
-    prog2.setUniform("attenuation",[1,0.0,0.0001,0]);
-	prog2.setUniform("t", t);
-	prog2.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
-	camera.draw(prog2);
-    ocean.draw(prog2, camera);
+	drawOcean();
 	
 	Shooting();
 	
@@ -569,4 +535,46 @@ function drawShip(theShip, prog, chrome)
  
 	gl.frontFace(gl.CCW);
 	prog.setUniform("worldMatrix",tdl.identity());
+}
+
+function drawNessie(){
+	prog1.use();
+	prog1.setUniform("trans", tdl.identity());
+	prog1.setUniform("reflMatrix", tdl.identity()); // refl
+	
+    prog1.setUniform("lightPos",
+        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
+    );
+    prog1.setUniform("lightColor",
+        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
+    );
+    
+    prog1.setUniform("fogNear",50);
+    prog1.setUniform("fogDelta", 30);
+    prog1.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
+	camera.draw(prog1);
+	nessie.draw(prog1,1);
+	if(document.getElementById('fur').checked) {
+		Fur();
+	}
+}
+
+function drawOcean(){
+	prog2.use();
+	prog2.setUniform("trans", tdl.identity());
+	prog2.setUniform("lightPos",
+        [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
+    );
+    prog2.setUniform("lightColor",
+        [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
+    );
+	prog2.setUniform("fogNear",50);
+    prog2.setUniform("fogDelta", 30);
+    prog2.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog2.setUniform("attenuation",[1,0.0,0.0001,0]);
+	prog2.setUniform("t", t);
+	prog2.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
+	camera.draw(prog2);
+    ocean.draw(prog2, camera);
 }

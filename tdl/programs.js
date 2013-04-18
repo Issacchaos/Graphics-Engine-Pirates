@@ -110,14 +110,35 @@ tdl.programs.loadProgram = function(vertexShader, fragmentShader) {
 /**
  * A object to manage a WebGLProgram.
  * @constructor
- * @param {string} vertexShader The vertex shader source.
- * @param {string} fragmentShader The fragment shader source.
- * @param {!function(error)) opt_asyncCallback. Called with
- *        undefined if success or string if failure.
+ * @param loader: A tdl.Loader object (unused if opts.params_are_source is true)
+ * @param {string} vs_url The vertex shader url or source
+ * @param {string} fs_url The fragment shader url or source.
+ * @param opts: Optional: Can contain the following fields:
+ *          * boolean params_are_source: If true, vs_url and fs_url are the actual 
+ *              source code of the shader rather than a URL
  */
-tdl.programs.Program = function(loader,vs_url,fs_url,params_are_source){
+tdl.programs.Program = function(loader,vs_url,fs_url,opts){
     var that=this;
     
+    if( opts === true )
+        opts={params_are_source:true};
+    else if( opts === false )
+        opts={params_are_source:false};
+    else if( opts === undefined )
+        opts={};
+    
+    var params_are_source = (opts.params_are_source===undefined)?false:opts.params_are_source;
+    
+    if( opts.defines !== undefined ){
+        //FIXME: This is not implemented yet
+        this.defines = {};
+        for(var k in opts.defines){
+            this.defines[k+""]=""+opts.defines[k];
+        }
+    }
+    else{
+        this.defines={};
+    }
     //var id = tdl.programs.makeProgramId(vs_url, fs_url);
     //this.id = id;
     tdl.programs.init_();
@@ -133,6 +154,7 @@ tdl.programs.Program = function(loader,vs_url,fs_url,params_are_source){
     if( params_are_source ){
         this.vs_url="$vs$";
         this.fs_url="$fs$";
+        this.id = "(anonymous)";
         //they aren't url's -- they're the actual shader source
         this.filedata[this.vs_url]=vs_url;
         this.filedata[this.fs_url]=fs_url;
@@ -141,6 +163,7 @@ tdl.programs.Program = function(loader,vs_url,fs_url,params_are_source){
     else{
         this.vs_url = vs_url;
         this.fs_url = fs_url;
+        this.id = vs_url+"+"+fs_url;
         if(!loader || loader.loadTextFiles === undefined ){
             throw(new Error("First argument to program constructor must be a Loader"));
         }
@@ -161,6 +184,7 @@ tdl.programs.Program = function(loader,vs_url,fs_url,params_are_source){
     }
 }
 
+//Internal function: Fetch any #include'd files
 tdl.programs.Program.prototype.process_loaded_file = function(loader,fname,fcontent){
     var rex=/^\s*#\s*include\s+["<]([^>"]+)/mg
     this.filedata[fname]=fcontent;
@@ -183,10 +207,21 @@ tdl.programs.Program.prototype.process_loaded_file = function(loader,fname,fcont
     }
 }
 
+//Internal function: 
+//replace #include <abc> with the actual text of the file abc
+//rdepth is used to prevent infinite recursion
+//Returns a triple: 
+//  X,Y,Z
+// where:
+//      X[i] = line i of the source code, with includes expanded
+//      Y[i] = the file where line i came from
+//      Z[i] = the number of line i in its original source file
+//The length of X,Y,Z are all equal
+//FIXME: If rdepth is zero, we also do #define insertion
 tdl.programs.Program.prototype.expand_includes = function(srcfilename,rdepth){
     
     if( rdepth > 25 ){
-        throw new Error("Too many nested includes for "+this.vs_url+" / "+this.fs_url);
+        throw new Error("Too many nested includes for "+this.vs_url+"+"+this.fs_url);
     }
         
     if( this.filedata[srcfilename] === undefined ){
@@ -201,12 +236,13 @@ tdl.programs.Program.prototype.expand_includes = function(srcfilename,rdepth){
         pfx = srcfilename.substr(0,pfx+1);
         
     var src = this.filedata[srcfilename];
-    src=src.replace(/[\r\n]/g,"\n");
+    src=src.replace(/\r\n/g,"\n");
+    src=src.replace(/\r/g,"\n");
     var L=src.split("\n");
-    
-    var L2=[];
-    var FN=[];
-    var OF=[];
+
+    var L2=[];  //each line of code gets one entry here
+    var FN=[];  //filename for each line of code: length of L2 === length of FN
+    var OF=[];  //line number of L2 in its original file. Length of OF === length of L2
     
     var rex=/^\s*#\s*include\s+["<]([^>"]+)/
     for(var i=0;i<L.length;++i){
@@ -699,7 +735,7 @@ tdl.programs.Program.prototype.finish_constructing_program = function() {
                         gl.uniform1i(loc, unit);
                   
                         if( v.bindToUnit === undefined ){
-                            throw new Error("You must pass a ***Texture*** object to setUniform() for "+name);
+                            throw new Error("You must pass a ***Texture*** object to setUniform('"+name+"',...)");
                         }
                         v.bindToUnit(unit);
                         var tmp = [v.width,v.height,1.0/v.width,1.0/v.height];
@@ -796,7 +832,7 @@ tdl.programs.Program.prototype.use = function() {
   //    throw new Error("You must load and compile the program before you can use() it");
   //}
   gl.useProgram(this.program);
-  gl.tdl.currentProgram = this;
+  gl.tdl.currentProgram = this; //also used in framebuffers.js (and tdl.js and webgl.js?)
 };
 
 //function dumpValue(msg, name, value) {
@@ -840,7 +876,7 @@ tdl.programs.Program.prototype.setUniform = function(uniform, value, ignoremissi
       if( this.warned[uniform] === undefined && ignoremissing !== true){
           this.warned[uniform] = true;
           tdl.log("Warning: Shader "+this.id+" doesn't have uniform '"+uniform+"'");
-          console && console.trace && console.trace();
+          //console && console.trace && console.trace();
       }
   }
 };
@@ -854,8 +890,8 @@ tdl.programs.Program.prototype.getAttribLoc = function(name){
         if( this.awarned[name] === undefined ){
             this.awarned[name]=true;
             tdl.log("Warning: Shader "+this.id+" doesn't have attribute '"+name+"'");
-            if( console && console.trace )
-                console.trace();
+            //if( console && console.trace )
+            //    console.trace();
         }
     }
     return lo;
@@ -885,13 +921,18 @@ tdl.programs.Program.prototype.disableAllAttribs = function(){
 //jh added to help debugging
 tdl.programs.Program.prototype.checkUninitialized = function(){
     if( !this.warned_uninitialized ){
+        var do_trace=false;
         this.warned_uninitialized=true;
         for(var X in this.uninitialized_uniforms ){
             tdl.log("Warning: Uninitialized uniform '"+X+"' in "+this.vs_url+"+"+this.fs_url);
+            do_trace=true;
         }
         for(var X in this.uninitialized_attribs ){
             tdl.log("Warning: Uninitialized attrib '"+X+"' in "+this.vs_url+"+"+this.fs_url);
+            do_trace=true;
         }
+        if(do_trace)
+            console.trace();
     }
 }
 

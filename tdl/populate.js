@@ -38,6 +38,7 @@
     f(tdl.textures,"textures");
     f(tdl.webgl,"webgl");
     f(tdl.framebuffers,"framebuffers");
+    f(tdl.vec,"vec");
     //f(tdl.math.matrix4,"math.matrix4");
     f(tdl.quaternions,"quaternions","quat");
 
