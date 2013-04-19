@@ -56,6 +56,23 @@ var noiseProg;
 var P, pArray; 
 var G, gArray;
 
+//Shadows
+var shadowDepthProg;
+var shadowDrawProg2;
+var shadowFBO;
+var SunCamera = new Camera({
+    eye: [10,10,10],
+    coi: [0,0,0],
+    up: [0,1,0],
+	fov: 45.0
+    }
+);
+SunCamera.yon = 500.0;
+var mapMatrix = [0.5,0,0,0,
+				 0,0.5,0,0,
+				 0,0,0.5,0,
+				 0.5,0.5,0.5,1];
+
 function main(){
     cvs = document.getElementById("cvs");
     gl = tdl.webgl.setupWebGL(cvs,{stencil:true,alpha:false});
@@ -94,6 +111,10 @@ function main(){
 	
 	//Noise
 	noiseProg = new tdl.programs.Program(loader,"shaders/noisevs.txt","shaders/noisefs.txt");
+
+	//Shadows
+	shadowDepthProg = new tdl.programs.Program(loader,"shaders/shadowvs.txt","shaders/shadowfs.txt");
+	shadowDrawProg2 = new tdl.programs.Program(loader,"shaders/shadowvs2.txt","shaders/shadowfs2.txt");
 	
     loader.finish();
 }
@@ -120,6 +141,9 @@ function loaded(){
 	fboFlare1 = new tdl.Framebuffer(16,16,true);
 	fboFlare2 = new tdl.Framebuffer(1,1);
 	vb = gl.createBuffer(16,16);
+
+	//Shadows
+	shadowFBO = new tdl.Framebuffer(1000,1000);
 	
     gl.clearColor(0.4,0.7,0.9,1.0);
     gl.enable(gl.CULL_FACE);
@@ -311,6 +335,18 @@ function dss_keep(){
 
 function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+
+    if(document.getElementById('shadows').checked) {
+    	shadowFBO.bind();
+		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+		shadowDepthProg.use();
+		shadowDepthProg.setUniform("hither", SunCamera.hither);
+		shadowDepthProg.setUniform("yon", SunCamera.yon);
+		SunCamera.draw(shadowDepthProg);
+		ship.draw(shadowDepthProg);
+		ocean.draw(shadowDepthProg);
+		shadowFBO.unbind();
+    }
     
 	if(document.getElementById('environ').checked) {
 		drawShip(chromeship, envmapprog, true);
@@ -322,9 +358,9 @@ function draw(){
 		drawShip(ship, prog1, false);
 	}
 	
-	drawNessie();
+	drawNessie(prog1);
 	
-	drawOcean();
+	drawOcean(prog2);
 	
 	Shooting();
 	
@@ -565,46 +601,46 @@ function drawShip(theShip, prog, chrome)
 	prog.setUniform("worldMatrix",tdl.identity());
 }
 
-function drawNessie(){
-	prog1.use();
-	prog1.setUniform("trans", tdl.identity());
-	prog1.setUniform("reflMatrix", tdl.identity()); // refl
+function drawNessie(prog){
+	prog.use();
+	prog.setUniform("trans", tdl.identity());
+	prog.setUniform("reflMatrix", tdl.identity()); // refl
 	
-    prog1.setUniform("lightPos",
+    prog.setUniform("lightPos",
         [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
     );
-    prog1.setUniform("lightColor",
+    prog.setUniform("lightColor",
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
     
-    prog1.setUniform("fogNear",50);
-    prog1.setUniform("fogDelta", 30);
-    prog1.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
-    prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
-	camera.draw(prog1);
-	nessie.draw(prog1,1);
+    prog.setUniform("fogNear",50);
+    prog.setUniform("fogDelta", 30);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog.setUniform("attenuation",[1,0.0,0.0001,0]);
+	camera.draw(prog);
+	nessie.draw(prog,1);
 	if(document.getElementById('fur').checked) {
 		Fur();
 	}
 }
 
-function drawOcean(){
-	prog2.use();
-	prog2.setUniform("trans", tdl.identity());
-	prog2.setUniform("lightPos",
+function drawOcean(prog){
+	prog.use();
+	prog.setUniform("trans", tdl.identity());
+	prog.setUniform("lightPos",
         [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
     );
-    prog2.setUniform("lightColor",
+    prog.setUniform("lightColor",
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
-	prog2.setUniform("fogNear",50);
-    prog2.setUniform("fogDelta", 30);
-    prog2.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
-    prog2.setUniform("attenuation",[1,0.0,0.0001,0]);
-	prog2.setUniform("t", t);
-	prog2.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
-	camera.draw(prog2);
-    ocean.draw(prog2, camera);
+	prog.setUniform("fogNear",50);
+    prog.setUniform("fogDelta", 30);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog.setUniform("attenuation",[1,0.0,0.0001,0]);
+	prog.setUniform("t", t);
+	prog.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
+	camera.draw(prog);
+    ocean.draw(prog, camera);
 }
 
 function randVec4(num){

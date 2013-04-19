@@ -1,0 +1,8 @@
+precision highp float;
+
+uniform float hither, yon;
+varying vec4 pv;
+void main(){
+     float z = (pv.z+hither)/(yon-hither);
+     gl_FragColor = vec4(-z,-z,-z,1.0);
+}

@@ -1,0 +1,11 @@
+uniform mat4 worldMatrix, viewMatrix, projMatrix;
+attribute vec4 position;
+varying vec4 pv;
+void main(){
+     vec4 p = position;
+     p = p*worldMatrix;
+     p = p*viewMatrix;
+     pv = p;    
+     p = p*projMatrix;
+     gl_Position = p;
+ }
