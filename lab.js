@@ -344,7 +344,7 @@ function draw(){
 		shadowDepthProg.setUniform("yon", SunCamera.yon);
 		SunCamera.draw(shadowDepthProg);
 		ship.draw(shadowDepthProg);
-		ocean.draw(shadowDepthProg);
+		nessie.draw(shadowDepthProg);
 		shadowFBO.unbind();
     }
     
