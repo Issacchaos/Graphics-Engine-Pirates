@@ -61,17 +61,18 @@ var shadowDepthProg;
 var shadowDrawProg2;
 var shadowFBO;
 var SunCamera = new Camera({
-    eye: [10,10,10],
+    eye: [10,100,10],
     coi: [0,0,0],
     up: [0,1,0],
-	fov: 45.0
+	fov: 90.0
     }
 );
-SunCamera.yon = 500.0;
+SunCamera.yon = 1000.0;
 var mapMatrix = [0.5,0,0,0,
 				 0,0.5,0,0,
 				 0,0,0.5,0,
 				 0.5,0.5,0.5,1];
+//FIX: put in bool for not constant black after pushing shadows button
 
 function main(){
     cvs = document.getElementById("cvs");
@@ -142,8 +143,8 @@ function loaded(){
 	fboFlare2 = new tdl.Framebuffer(1,1);
 	vb = gl.createBuffer(16,16);
 
-	//Shadows
-	shadowFBO = new tdl.Framebuffer(1000,1000);
+	//Shadowsop
+	shadowFBO = new tdl.Framebuffer(2048,2048);
 	
     gl.clearColor(0.4,0.7,0.9,1.0);
     gl.enable(gl.CULL_FACE);
@@ -222,6 +223,7 @@ function update(){
 	
 		if(document.getElementById('collision').checked) {
 			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -234,6 +236,7 @@ function update(){
 	
 		if(document.getElementById('collision').checked) {
 			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -246,6 +249,7 @@ function update(){
 	
 		if(document.getElementById('collision').checked) {
 			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -258,6 +262,7 @@ function update(){
 	
 		if(document.getElementById('collision').checked) {
 			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -337,35 +342,47 @@ function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
 
     if(document.getElementById('shadows').checked) {
+		shadowFBO.texture.unbind();
     	shadowFBO.bind();
 		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
 		shadowDepthProg.use();
 		shadowDepthProg.setUniform("hither", SunCamera.hither);
 		shadowDepthProg.setUniform("yon", SunCamera.yon);
+		shadowDepthProg.setUniform("viewMatrix", SunCamera.viewMatrix);
+		shadowDepthProg.setUniform("lightProjMatrix",SunCamera.projMatrix);
 		SunCamera.draw(shadowDepthProg);
 		ship.draw(shadowDepthProg);
-		nessie.draw(shadowDepthProg);
+		nessie.draw(shadowDepthProg,1);
 		shadowFBO.unbind();
+		if(document.getElementById('environ').checked) {
+			drawShip(chromeship, envmapprog, true);
+		}
+		else if(document.getElementById('noise').checked) {
+			drawShip(ship, noiseProg, false);
+		}
+		else{
+			drawShip(ship, prog1, false);
+		}
+		drawNessie(prog1);
+		drawOcean(prog2);
     }
-    
-	if(document.getElementById('environ').checked) {
-		drawShip(chromeship, envmapprog, true);
-	}
-	else if(document.getElementById('noise').checked) {
-		drawShip(ship, noiseProg, false);
-	}
 	else{
-		drawShip(ship, prog1, false);
+		if(document.getElementById('environ').checked) {
+			drawShip(chromeship, envmapprog, true);
+		}
+		else if(document.getElementById('noise').checked) {
+			drawShip(ship, noiseProg, false);
+		}
+		else{
+			drawShip(ship, prog1, false);
+		}
+		drawNessie(prog1);
+		drawOcean(prog2);
 	}
-	
-	drawNessie(prog1);
-	
-	drawOcean(prog2);
-	
-	Shooting();
-	
-	LensFlare();
     
+	Shooting();
+	LensFlare();
+    shadowFBO.texture.unbind();
     tdl.webgl.requestAnimationFrame(draw);
 }
 
@@ -382,7 +399,7 @@ function Fur(){
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
     
-    furprog.setUniform("fogNear",80);
+    furprog.setUniform("fogNear",50);
     furprog.setUniform("fogDelta", 30);
     furprog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
     furprog.setUniform("attenuation",[1,0.0,0.0001,0]);
@@ -527,6 +544,14 @@ function drawShip(theShip, prog, chrome)
 {
 	if(document.getElementById('noise').checked) {
 		prog.use();
+		if(document.getElementById('shadows').checked){
+			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
+			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
+			prog.setUniform("lightHither",SunCamera.hither);
+			prog.setUniform("lightYon",SunCamera.yon);
+			prog.setUniform("shadowtexture",shadowFBO.texture);
+			prog.setUniform("mapMatrix",mapMatrix);
+		}
 		prog.setUniform("reflMatrix", tdl.identity());
 		prog.setUniform("P", P);
 		prog.setUniform("G", G);
@@ -536,6 +561,14 @@ function drawShip(theShip, prog, chrome)
 	}
 	else{
 		prog.use();
+		if(document.getElementById('shadows').checked){
+			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
+			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
+			prog.setUniform("lightHither",SunCamera.hither);
+			prog.setUniform("lightYon",SunCamera.yon);
+			prog.setUniform("shadowtexture",shadowFBO.texture);
+			prog.setUniform("mapMatrix",mapMatrix);
+		}
 		prog.setUniform("trans", tdl.identity());
 		prog.setUniform("reflMatrix", tdl.identity()); // refl
 		
@@ -546,7 +579,7 @@ function drawShip(theShip, prog, chrome)
 			[1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
 		);
 		
-		prog.setUniform("fogNear",80);
+		prog.setUniform("fogNear",50);
 		prog.setUniform("fogDelta", 30);
 		prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
 		prog.setUniform("attenuation",[1,0.0,0.0001,0]);
@@ -603,6 +636,14 @@ function drawShip(theShip, prog, chrome)
 
 function drawNessie(prog){
 	prog.use();
+	if(document.getElementById('shadows').checked){
+			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
+			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
+			prog.setUniform("lightHither",SunCamera.hither);
+			prog.setUniform("lightYon",SunCamera.yon);
+			prog.setUniform("shadowtexture",shadowFBO.texture);
+			prog.setUniform("mapMatrix",mapMatrix);
+	}
 	prog.setUniform("trans", tdl.identity());
 	prog.setUniform("reflMatrix", tdl.identity()); // refl
 	
@@ -626,6 +667,14 @@ function drawNessie(prog){
 
 function drawOcean(prog){
 	prog.use();
+	if(document.getElementById('shadows').checked){
+			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
+			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
+			prog.setUniform("lightHither",SunCamera.hither);
+			prog.setUniform("lightYon",SunCamera.yon);
+			prog.setUniform("shadowtexture",shadowFBO.texture);
+			prog.setUniform("mapMatrix",mapMatrix);
+	}
 	prog.setUniform("trans", tdl.identity());
 	prog.setUniform("lightPos",
         [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  

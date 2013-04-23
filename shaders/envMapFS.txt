@@ -1,5 +1,6 @@
 precision highp float;
 
+uniform sampler2D shadowtexture;
 uniform sampler2D basetexture;
 uniform sampler2D emittexture;
 uniform sampler2D spectexture;
@@ -15,6 +16,12 @@ uniform float fogNear;
 uniform float fogDelta;
 uniform vec4 fogColor;
 uniform mat4 worldMatrix;
+
+uniform mat4 lightViewMatrix;
+uniform mat4 lightProjMatrix;
+uniform mat4 mapMatrix;
+uniform float lightHither;
+uniform float lightYon;
 
 uniform vec4 mirrorPos; // refl
 
@@ -82,5 +89,21 @@ void main(){
     vec4 c = mix(basecolor,fogColor,fogpct);
     
     gl_FragColor = c;
+	
+	vec4 wPos = v_worldPos * lightViewMatrix;
+	float z1 = wPos.z * (-1.0);
+	wPos = (wPos * lightProjMatrix) * mapMatrix;
+	wPos /= wPos.w;
+	z1 = (z1 - lightHither)/(lightYon - lightHither);
+	float z2 = texture2D(shadowtexture,wPos.xy).r;
+	
+	if(z1 < 0.0 || z1 > (z2+0.005))
+	{
+		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+	}
+	else
+	{
+			gl_FragColor = c;
+	} 
     
 }

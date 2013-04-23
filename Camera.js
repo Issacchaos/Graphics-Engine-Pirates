@@ -67,8 +67,8 @@ Camera.prototype={
         if( this.ViewMatrix === undefined )
             this.make_view_matrix();
             
-        //prog.setUniform("viewMatrix",this.viewMatrix);
-        //prog.setUniform("projMatrix",this.projMatrix);
+        prog.setUniform("viewMatrix",this.viewMatrix);
+        prog.setUniform("projMatrix",this.projMatrix);
         prog.setUniform("viewProjMatrix",this.viewProjMatrix);
         prog.setUniform("eyePos",this.eye);
     },
