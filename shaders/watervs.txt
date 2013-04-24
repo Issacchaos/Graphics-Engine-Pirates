@@ -2,6 +2,7 @@ attribute vec4 position;
 attribute vec4 texcoord;
 attribute vec4 normal;
 
+uniform mat4 viewMatrix;
 uniform mat4 worldMatrix;
 uniform mat4 viewProjMatrix;
 uniform float t;
@@ -12,6 +13,8 @@ varying vec4 v_texcoord;
 varying vec4 v_worldPos;
 varying vec4 v_normal;
 varying vec4 v_tangent;
+varying vec4 v_viewPos;
+
 
 float steepness = 1.5;
 float amplitude = 0.3;
@@ -51,6 +54,8 @@ vec3 calc_normal(float x, float z)
 
 void main()
 {
+	vec4 p = position * worldMatrix;
+	v_viewPos = p * viewMatrix; 
     vec4 pw = position * trans * worldMatrix;
 	pw.y = height(pw.x, pw.z);
     vec4 n;
