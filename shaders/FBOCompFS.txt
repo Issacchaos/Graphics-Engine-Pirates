@@ -1,0 +1,28 @@
+precision mediump float;
+uniform sampler2D tex;
+uniform vec4 tex_size;
+uniform vec2 deltas;
+uniform float d;
+uniform vec4 eyepos;
+varying vec4 v_texcoord;
+void main(){
+    vec4 tc=vec4(0,0,0,0);
+    tc += texture2D(tex,v_texcoord.st+-8.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-7.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-6.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-5.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-4.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-3.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-2.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+-1.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+0.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+1.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+2.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+3.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+4.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+5.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+6.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+7.00000000*deltas.st*tex_size.zw);
+    tc += texture2D(tex,v_texcoord.st+8.00000000*deltas.st*tex_size.zw);
+    gl_FragColor=0.05882353*tc;
+}
