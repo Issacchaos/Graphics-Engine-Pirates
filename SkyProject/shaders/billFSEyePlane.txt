@@ -1,0 +1,16 @@
+precision highp float;
+
+uniform sampler2D basetexture;
+
+varying vec4 v_texcoord;
+
+void main(){
+    vec4 c = texture2D(basetexture,v_texcoord.st);
+    
+    if(c.a < 0.01) {
+    	discard;
+    }
+    
+    gl_FragColor = c;
+    
+}

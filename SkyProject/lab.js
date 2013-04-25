@@ -13,6 +13,7 @@ var camera = new Camera({
 );
 var ship;
 var ocean;
+var oceanBlur;
 var nessie;
 var cvs;
 var currentShip;
@@ -56,13 +57,6 @@ var noiseProg;
 var P, pArray; 
 var G, gArray;
 
-//blur
-var usqProg, blurProg, depthProg;
-var usqBlur;
-var blur = [];
-var tmpbuff;
-var depth;
-
 //Shadows
 var shadowDepthProg;
 var shadowDrawProg2;
@@ -74,12 +68,28 @@ var SunCamera = new Camera({
 	fov: 90.0
     }
 );
+
+// Blurring
+var blur = [];
+var tmpbuff;
+var fboblur;
+var bquadprog;
+var bSuperShader;
+var usqblur;
+var bWater;
+
+
+
 SunCamera.yon = 1000.0;
 var mapMatrix = [0.5,0,0,0,
 				 0,0.5,0,0,
 				 0,0,0.5,0,
 				 0.5,0.5,0.5,1];
 //FIX: put in bool for not constant black after pushing shadows button
+
+//SKY CODE, SHIFT TO OWN FILE LATER
+var sky;
+//END SKY
 
 function main(){
     cvs = document.getElementById("cvs");
@@ -90,6 +100,7 @@ function main(){
 	prog1 = new tdl.programs.Program(loader,"shaders/vs.txt","shaders/fs.txt");
 	prog2 = new tdl.programs.Program(loader,"shaders/watervs.txt","shaders/waterfs.txt"); // for water
     ship = new Ship(loader, false);
+	oceanBlur = new SuperMesh(loader,"assets/ocean.spec.mesh");
     ocean = new Ocean(loader);
 	nessie = new Nessie(loader);
 	
@@ -120,16 +131,18 @@ function main(){
 	//Noise
 	noiseProg = new tdl.programs.Program(loader,"shaders/noisevs.txt","shaders/noisefs.txt");
 
-    //blur
-    usqProg = new tdl.programs.Program(loader, "shaders/FBOCompVS.txt","shaders/FBOCompFS.txt");
-    blurProg = new tdl.programs.Program(loader, "shaders/SuperShaderBlurVS.txt","shaders/SuperShaderBlurFS.txt");
-    depthProg = new tdl.programs.Program(loader, "shaders/depth vs.txt","shaders/depth fs.txt");
-
 	//Shadows
 	shadowDepthProg = new tdl.programs.Program(loader,"shaders/shadowvs.txt","shaders/shadowfs.txt");
 	shadowDrawProg2 = new tdl.programs.Program(loader,"shaders/shadowvs2.txt","shaders/shadowfs2.txt");
 	
+	//Blur
+	bquadprog = new tdl.programs.Program(loader,"shaders/FBOCompVS.txt","shaders/FBOCompFS.txt");
+	bSuperShader = new tdl.programs.Program(loader, "shaders/SuperShaderBlurVS.txt", "shaders/SuperShaderBlurFS.txt");
+	bWater = new tdl.programs.Program(loader,"shaders/watervs.txt", "shaders/SuperShaderBlurFS.txt");
     loader.finish();
+    
+    //SKY
+    sky = new Sky(loader);
 }
 
 function loaded(){
@@ -143,22 +156,24 @@ function loaded(){
 	P = new tdl.ColorTexture( {width:256, height: 1, pixels: pArray, format: gl.LUMINANCE} );
 	gArray = new Uint8Array(randVec4(256));
 	G = new tdl.ColorTexture( {width:256, height: 1, pixels: gArray} );
-
+	
+	//blur
+	usqblur = new UnitSquare();
+	fboblur = new tdl.Framebuffer(800,600);
+	
+	for(var i=0; i<5;i++)
+	{
+		blur.push(new tdl.Framebuffer(800,600));
+	}
+	tmpbuff= new tdl.Framebuffer(800,600);
+	
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
     setTimeout(update,33);
-    tdl.requestAnimationFrame(finalDraw);
+    tdl.requestAnimationFrame(draw);
     update_camera();
-    
-    //blur
-    usqBlur = new UnitSquare();
-    for(var i = 0; i < 6; i++)
-    {
-        blur.push(new tdl.Framebuffer(600,600));
-    }
-    tmpbuff = new tdl.Framebuffer(600,600);
-    depth = new tdl.Framebuffer(600,600);
 	
+
 	//Lens Flare
 	fboFlare1 = new tdl.Framebuffer(16,16,true);
 	fboFlare2 = new tdl.Framebuffer(1,1);
@@ -168,7 +183,6 @@ function loaded(){
 	shadowFBO = new tdl.Framebuffer(2048,2048);
 	
     gl.clearColor(0.4,0.7,0.9,1.0);
-    //gl.clearColor(1.0,1.0,1.0,1.0);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -244,12 +258,8 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			if(document.getElementById('environ').checked) {
-				HitDetection(chromeship,nessie,13,13);
-			}
-			else{
-				HitDetection(ship,nessie,13,13);
-			}
+			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -261,12 +271,8 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			if(document.getElementById('environ').checked) {
-				HitDetection(chromeship,nessie,13,13);
-			}
-			else{
-				HitDetection(ship,nessie,13,13);
-			}
+			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -278,12 +284,8 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			if(document.getElementById('environ').checked) {
-				HitDetection(chromeship,nessie,13,13);
-			}
-			else{
-				HitDetection(ship,nessie,13,13);
-			}
+			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -295,12 +297,8 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			if(document.getElementById('environ').checked) {
-				HitDetection(chromeship,nessie,13,13);
-			}
-			else{
-				HitDetection(ship,nessie,13,13);
-			}
+			HitDetection(ship,nessie,13,13);
+			HitDetection(chromeship,nessie,13,13);
 		}
 		
     }
@@ -375,40 +373,82 @@ function dss_keep(){
      gl.stencilFunc(gl.EQUAL,1,~0);
      gl.disable(gl.DEPTH_TEST);
 }
+function drawBlur(prog1)
+{
+	prog1.use();
+	var src = fboblur;
+	var dst = blur[0];
+	for(var i=0;i<5;++i){
+		tmpbuff.texture.unbind();
+		tmpbuff.bind();
+        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+		prog1.setUniform("tex", src.texture);
+		prog1.setUniform("deltas",[0,1]);
+		usqblur.draw(prog1);
+		tmpbuff.unbind();
+		
+		dst.bind();
+		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+		prog1.setUniform("tex", tmpbuff.texture);
+		prog1.setUniform("deltas",[1,0]);
+		usqblur.draw(prog1);
+		dst.unbind();
+		
+        if((i+1) != blur.length)
+        {
+            src = blur[i];
+            dst = blur[i+1];
+        }
+	}
+		
+	
+}
 
-function finalDraw(){
-    for(var i = 0; i < 6; i++)
-    {
-        blur[i].texture.unbind();
-    }
-    depth.texture.unbind();
-        
-    if(document.getElementById("blur").checked)
-    {
-        depth.bind();
-        drawDepth(depthProg);
-        depth.unbind();
-    
-        blur[0].bind();
-        draw();
-        blur[0].unbind();
-        
-        drawBlur(usqProg, blurProg);
-    }
-    else
-    {
-        draw();
-    }
-    
-    LensFlare();
-    
-    tdl.webgl.requestAnimationFrame(finalDraw);
+function drawSky(prog1) {
+	sky.draw(prog1);
 }
 
 function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+	//BLURRING
+	if(document.getElementById('blur').checked)
+	{
+		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+		
+		fboblur.texture.unbind();
+		for(var i = 0; i < 5; i++)
+		{
+			blur[i].texture.unbind();
+		}
+		
+		fboblur.bind();
+		drawShip(ship, prog1, false);
+		drawNessie(prog1);
+		drawOcean(prog2);
+		drawSky(prog1);
+		
+		fboblur.unbind();
+		drawBlur(bquadprog);
+		
+		bSuperShader.use();
+    
+		bSuperShader.setUniform("blurTex1",blur[0].texture);
+		bSuperShader.setUniform("blurTex2",blur[1].texture);
+		bSuperShader.setUniform("blurTex3",blur[2].texture);
+		bSuperShader.setUniform("blurTex4",blur[3].texture);
+		bSuperShader.setUniform("blurTex5",blur[4].texture);
+		bSuperShader.setUniform("noBlurTex", fboblur.texture);
+		bSuperShader.setUniform("worldMatrix",tdl.identity());
+		drawShip(ship,bSuperShader, false)
+		drawOcean(bWater);
+		
 
-    if(document.getElementById('shadows').checked) {
+	
+		
+		
+
+	}
+    else if(document.getElementById('shadows').checked) {
 		shadowFBO.texture.unbind();
     	shadowFBO.bind();
 		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
@@ -421,94 +461,37 @@ function draw(){
 		ship.draw(shadowDepthProg);
 		nessie.draw(shadowDepthProg,1);
 		shadowFBO.unbind();
-		
-		//update each ships positionso in the same place when switched
 		if(document.getElementById('environ').checked) {
-			ship.pos = chromeship.pos;
 			drawShip(chromeship, envmapprog, true);
 		}
 		else if(document.getElementById('noise').checked) {
-			chromeship.pos = ship.pos;
 			drawShip(ship, noiseProg, false);
 		}
 		else{
-			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
-		
 		drawNessie(prog1);
 		drawOcean(prog2);
     }
 	else{
-		//update each ships positionso in the same place when switched
 		if(document.getElementById('environ').checked) {
-			ship.pos = chromeship.pos;
 			drawShip(chromeship, envmapprog, true);
 		}
 		else if(document.getElementById('noise').checked) {
-			chromeship.pos = ship.pos;
 			drawShip(ship, noiseProg, false);
 		}
 		else{
-			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
 		drawNessie(prog1);
 		drawOcean(prog2);
 	}
-	Shooting(prog1);
-    shadowFBO.texture.unbind();
-}
-
-function drawDepth(prog){
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
-
-	drawShip(ship, prog, false);
-	drawNessie(prog);
-	drawOcean(prog);
-	Shooting(prog);
-}
-
-
-function drawBlur(prog1, prog2)
-{
-	prog1.use();
-	var src = blur[0];
-	var dst = blur[1];
-	for(var i=1;i<blur.length;++i){
-		tmpbuff.texture.unbind();
-		tmpbuff.bind();
-        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
-		prog1.setUniform("tex", src.texture);
-		prog1.setUniform("deltas",[0,1]);
-		usqBlur.draw(prog1);
-		tmpbuff.unbind();
-		
-		dst.bind();
-		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
-		prog1.setUniform("tex", tmpbuff.texture);
-		prog1.setUniform("deltas",[1,0]);
-		usqBlur.draw(prog1);
-		dst.unbind();
-		
-        if((i+1) != blur.length)
-        {
-            src = blur[i];
-            dst = blur[i+1];
-        }
-	}
-		
-	prog2.use();
     
-	prog2.setUniform("blurTex1",blur[1].texture);
-	prog2.setUniform("blurTex2",blur[2].texture);
-	prog2.setUniform("blurTex3",blur[3].texture);
-	prog2.setUniform("blurTex4",blur[4].texture);
-	prog2.setUniform("blurTex5",blur[5].texture);
-	prog2.setUniform("noBlurTex", blur[0].texture);
+	Shooting();
+	LensFlare();
 	
-    prog2.setUniform("depthTex", depth.texture);
-    usqBlur.draw(prog2);
+    shadowFBO.texture.unbind();
+    tdl.webgl.requestAnimationFrame(draw);
 }
 
 function Fur(){
@@ -524,7 +507,7 @@ function Fur(){
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
     
-    furprog.setUniform("fogNear",80);
+    furprog.setUniform("fogNear",50);
     furprog.setUniform("fogDelta", 30);
     furprog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
     furprog.setUniform("attenuation",[1,0.0,0.0001,0]);
@@ -580,8 +563,7 @@ function LensFlare(){
 	flareProg3.setUniform("fbo1", fboFlare1.texture);	
 	gl.drawArrays(gl.POINTS,0,(256));	
 	fboFlare2.unbind();	
-	gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color
-    //gl.clearColor(1.0,1.0,1.0,1.0);
+	gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color	
 	//****************************************************************************************	
 	flareProg1.use();								//now on to draw the sun geometry, and lens flares.		
 	flareProg1.setUniform("FBO2", fboFlare2.texture);
@@ -637,7 +619,7 @@ function LensFlare(){
 
 }
 
-function Shooting(prog1){
+function Shooting(){
 
 	prog1.use();
 	prog1.setUniform("trans", tdl.identity());
@@ -650,9 +632,9 @@ function Shooting(prog1){
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
     
-    prog1.setUniform("fogNear",80);
+    prog1.setUniform("fogNear",50);
     prog1.setUniform("fogDelta", 30);
-    prog1.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    prog1.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
 	camera.draw(prog1);
 	for(var b = 0; b < cBalls.length; ++b)
@@ -705,9 +687,9 @@ function drawShip(theShip, prog, chrome)
 			[1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
 		);
 		
-		prog.setUniform("fogNear",80);
+		prog.setUniform("fogNear",50);
 		prog.setUniform("fogDelta", 30);
-		prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+		prog.setUniform("fogColor",[0.4,0.7,0.9,0.0]);
 		prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 		dss_keep(); // refl
 		
@@ -780,9 +762,9 @@ function drawNessie(prog){
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
     
-    prog.setUniform("fogNear",80);
+    prog.setUniform("fogNear",50);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	camera.draw(prog);
 	nessie.draw(prog,1);
@@ -808,9 +790,9 @@ function drawOcean(prog){
     prog.setUniform("lightColor",
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
-	prog.setUniform("fogNear",80);
+	prog.setUniform("fogNear",50);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	prog.setUniform("t", t);
 	prog.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);

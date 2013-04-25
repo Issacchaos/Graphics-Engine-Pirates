@@ -6,16 +6,25 @@ uniform sampler2D blurTex3;
 uniform sampler2D blurTex4;
 uniform sampler2D blurTex5;
 uniform sampler2D noBlurTex;
-uniform sampler2D depthTex;
+uniform vec4 noBlurTex_size;
 
-varying vec4 v_texcoord;
+uniform vec4 eyePos;
+uniform float fogNear;
+uniform float fogDelta;
+uniform vec4 fogColor;
+uniform float hither;
+uniform float yon;
+
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+varying vec4 v_viewPos;
 
 void main(){
 
 	vec4 c = vec4(0.0,0.0,0.0,1.0);
     
-	vec2 coord = v_texcoord.xy;
-    float dist = texture2D(depthTex,coord).r;
+	vec2 coord = gl_FragCoord.xy / noBlurTex_size.xy;
+    float dist = (-v_viewPos.z - hither) / yon;
     float amount = 0.0;
     
     if(dist <= .2)

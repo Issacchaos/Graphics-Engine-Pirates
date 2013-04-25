@@ -1,0 +1,23 @@
+attribute vec4 position;
+attribute vec4 texcoord;
+//attribute vec4 normal;
+
+uniform mat4 worldMatrix;
+uniform mat4 viewProjMatrix;
+uniform vec4 eyePos;
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+
+void main(){
+    vec4 p = position;
+    float size = p.w;
+    p.w = 1.0;
+    v_texcoord=texcoord;
+    p = p * worldMatrix;
+    gl_Position = p * viewProjMatrix;
+    vec4 distanceVec = eyePos - p;
+    float distance = sqrt(pow(distanceVec.x, 2.0) + pow(distanceVec.y, 2.0) + pow(distanceVec.z, 2.0));
+
+    gl_PointSize = size / distance;
+}

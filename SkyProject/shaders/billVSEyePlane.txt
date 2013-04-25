@@ -1,0 +1,51 @@
+attribute vec4 position;
+attribute vec4 texcoord;
+attribute vec4 normal;
+
+uniform mat4 worldMatrix;
+uniform mat4 viewProjMatrix;
+uniform vec4 eyeLoc;
+uniform vec4 eyePos;
+uniform vec4 eyeV;
+uniform vec4 eyeU;
+uniform vec4 eyeW;
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+varying vec2 t;
+
+void main(){
+
+    vec4 p = position;
+    v_texcoord=texcoord;
+    float size = p.w;
+    p.w = 1.0;
+    
+	//calculate UVW based on viewer's eye position
+	//vec3 W = eyePos.xyz - position.xyz;
+	//vec4 U = position;
+	//U.xyz = cross(eyeV.xyz,W);
+	//vec4 V = position;
+	//V.xyz =  cross(W,U.xyz);
+    
+    //Use Camera's UVW
+	vec4 U = position;
+	U = eyeU;
+    vec4 V = position;
+    V = eyeV;
+    vec4 W = position;
+    W = eyeW;
+    
+    //Force Billboard to face viewer based on previous calculations
+    t = texcoord.st;
+    vec2 delta = texcoord.pq;
+    p += delta.x * U + delta.y * V;
+    p.w = 1.0;
+    
+    //p = p * worldMatrix;
+    gl_Position = p * viewProjMatrix;
+    vec4 distanceVec = eyePos - p;
+    float distance = sqrt(pow(distanceVec.x, 2.0) + pow(distanceVec.y, 2.0) + pow(distanceVec.z, 2.0));
+
+    gl_PointSize = size / distance;
+}
