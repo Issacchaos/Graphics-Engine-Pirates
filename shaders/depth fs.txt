@@ -1,0 +1,19 @@
+precision highp float;
+
+uniform float hither;
+uniform float yon;
+
+varying vec4 v_pe;
+
+
+void main(){
+	//doesn't affect points where there is no object!
+	//calculates a depth value that is between 0 and 1
+	//the closer the point is to hither, the smaller it is
+	//the closer the point is to yon, the larger it is
+	float d = ((-v_pe.z - hither) / yon);
+		
+	//passing the depth value as the color so it can be retrieved later      
+    gl_FragColor = vec4(d,d,d,1.0);
+    
+}
