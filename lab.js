@@ -535,7 +535,7 @@ function Fur(furprog){
 	furprog.use();
 	furprog.setUniform("trans", tdl.identity());
 	furprog.setUniform("furheight", 0.6);
-	furprog.setUniform("gravity", [0.0,-1.0,0.0]);
+	furprog.setUniform("gravity", [0.0,0.0,0.0]);
 	
     furprog.setUniform("lightPos",
         [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
