@@ -1,0 +1,4 @@
+1.	If you switch from camo or environment maps to none
+on ship on the web page, it will not draw textures on any of the
+objects unless you apply an environment option. When camo or
+environment maps selected, ship is only object with texture.
