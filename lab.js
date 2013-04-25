@@ -63,6 +63,9 @@ var blur = [];
 var tmpbuff;
 var depth;
 
+//depth
+var sDepthProg, wDepthProg, fDepthProg;
+
 //Shadows
 var shadowDepthProg;
 var shadowDrawProg2;
@@ -89,9 +92,14 @@ function main(){
 	//Regular shit
 	prog1 = new tdl.programs.Program(loader,"shaders/vs.txt","shaders/fs.txt");
 	prog2 = new tdl.programs.Program(loader,"shaders/watervs.txt","shaders/waterfs.txt"); // for water
-    ship = new Ship(loader, false);
+	ship = new Ship(loader, false);
     ocean = new Ocean(loader);
 	nessie = new Nessie(loader);
+	
+	//depth
+	sDepthProg = new tdl.programs.Program(loader,"shaders/vs.txt","shaders/depth fs.txt");
+	wDepthProg = new tdl.programs.Program(loader,"shaders/watervs.txt","shaders/depth fs.txt"); // for water
+	fDepthProg = new tdl.programs.Program(loader,"shaders/furVS.txt", "shaders/depth fs.txt");
 	
 	//Lens Flare
 	flareProg1 = new tdl.programs.Program(loader,"shaders/flarevs.txt","shaders/flarefs.txt");
@@ -167,8 +175,8 @@ function loaded(){
 	//Shadowsop
 	shadowFBO = new tdl.Framebuffer(2048,2048);
 	
-    gl.clearColor(0.4,0.7,0.9,1.0);
-    //gl.clearColor(1.0,1.0,1.0,1.0);
+    //gl.clearColor(0.4,0.7,0.9,1.0);
+    gl.clearColor(1.0,1.0,1.0,1.0);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -386,7 +394,7 @@ function finalDraw(){
     if(document.getElementById("blur").checked)
     {
         depth.bind();
-        drawDepth(depthProg);
+        drawDepth();
         depth.unbind();
     
         blur[0].bind();
@@ -435,8 +443,7 @@ function draw(){
 			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
-		
-		drawNessie(prog1);
+		drawNessie(prog1,furprog);
 		drawOcean(prog2);
     }
 	else{
@@ -453,25 +460,25 @@ function draw(){
 			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
-		drawNessie(prog1);
+		drawNessie(prog1,furprog);
 		drawOcean(prog2);
 	}
 	Shooting(prog1);
     shadowFBO.texture.unbind();
 }
 
-function drawDepth(prog){
+function drawDepth(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
-
-	drawShip(ship, prog, false);
-	drawNessie(prog);
-	drawOcean(prog);
-	Shooting(prog);
+	sDepthProg.use();
+	drawShip(ship, sDepthProg, false);
+	drawNessie(sDepthProg,fDepthProg);
+	wDepthProg.use();
+	drawOcean(wDepthProg);
+	sDepthProg.use();
+	Shooting(sDepthProg);
 }
 
-
-function drawBlur(prog1, prog2)
-{
+function drawBlur(prog1, prog2){
 	prog1.use();
 	var src = blur[0];
 	var dst = blur[1];
@@ -511,7 +518,7 @@ function drawBlur(prog1, prog2)
     usqBlur.draw(prog2);
 }
 
-function Fur(){
+function Fur(furprog){
 	furprog.use();
 	furprog.setUniform("trans", tdl.identity());
 	furprog.setUniform("furheight", 0.6);
@@ -526,7 +533,7 @@ function Fur(){
     
     furprog.setUniform("fogNear",80);
     furprog.setUniform("fogDelta", 30);
-    furprog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    furprog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
     furprog.setUniform("attenuation",[1,0.0,0.0001,0]);
     
 	furprog.setUniform("worldMatrix",tdl.identity());
@@ -580,8 +587,8 @@ function LensFlare(){
 	flareProg3.setUniform("fbo1", fboFlare1.texture);	
 	gl.drawArrays(gl.POINTS,0,(256));	
 	fboFlare2.unbind();	
-	gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color
-    //gl.clearColor(1.0,1.0,1.0,1.0);
+	//gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color
+    gl.clearColor(1.0,1.0,1.0,1.0);
 	//****************************************************************************************	
 	flareProg1.use();								//now on to draw the sun geometry, and lens flares.		
 	flareProg1.setUniform("FBO2", fboFlare2.texture);
@@ -637,37 +644,36 @@ function LensFlare(){
 
 }
 
-function Shooting(prog1){
+function Shooting(prog){
 
-	prog1.use();
-	prog1.setUniform("trans", tdl.identity());
-	prog1.setUniform("reflMatrix", tdl.identity()); // refl
+	prog.use();
+	prog.setUniform("trans", tdl.identity());
+	prog.setUniform("reflMatrix", tdl.identity()); // refl
 	
-    prog1.setUniform("lightPos",
+    prog.setUniform("lightPos",
         [10,100,10,1,  0,0,0,1,  0,0,0,1,  0,0,0,1]  
     );
-    prog1.setUniform("lightColor",
+    prog.setUniform("lightColor",
         [1,1,1,1,  0,0,0,0,  0,0,0,0,  0,0,0,0 ] 
     );
     
-    prog1.setUniform("fogNear",80);
-    prog1.setUniform("fogDelta", 30);
-    prog1.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
-    prog1.setUniform("attenuation",[1,0.0,0.0001,0]);
-	camera.draw(prog1);
+    prog.setUniform("fogNear",80);
+    prog.setUniform("fogDelta", 30);
+    prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
+    prog.setUniform("attenuation",[1,0.0,0.0001,0]);
+	camera.draw(prog);
 	for(var b = 0; b < cBalls.length; ++b)
 	{
 		if(cBalls[b].Alive){
 			cBalls[b].update();
-			cBalls[b].draw(prog1);			
+			cBalls[b].draw(prog);			
 		}
 	}
 	pSystem.draw(camera.viewProjMatrix,tdl.identity(),tdl.math.transpose(camera.viewProjMatrix));
 	gl.depthMask(true);
 }
 
-function drawShip(theShip, prog, chrome)
-{
+function drawShip(theShip, prog, chrome){
 	if(document.getElementById('noise').checked) {
 		prog.use();
 		if(document.getElementById('shadows').checked){
@@ -707,7 +713,7 @@ function drawShip(theShip, prog, chrome)
 		
 		prog.setUniform("fogNear",80);
 		prog.setUniform("fogDelta", 30);
-		prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+		prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
 		prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 		dss_keep(); // refl
 		
@@ -760,7 +766,7 @@ function drawShip(theShip, prog, chrome)
 	prog.setUniform("worldMatrix",tdl.identity());
 }
 
-function drawNessie(prog){
+function drawNessie(prog, furprog){
 	prog.use();
 	if(document.getElementById('shadows').checked){
 			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
@@ -782,12 +788,12 @@ function drawNessie(prog){
     
     prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	camera.draw(prog);
 	nessie.draw(prog,1);
 	if(document.getElementById('fur').checked) {
-		Fur();
+		Fur(furprog);
 	}
 }
 
@@ -810,7 +816,7 @@ function drawOcean(prog){
     );
 	prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,0.7]);
+    prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	prog.setUniform("t", t);
 	prog.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);

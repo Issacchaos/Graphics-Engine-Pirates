@@ -71,6 +71,8 @@ Camera.prototype={
         prog.setUniform("projMatrix",this.projMatrix);
         prog.setUniform("viewProjMatrix",this.viewProjMatrix);
         prog.setUniform("eyePos",this.eye);
+		prog.setUniform("hither", this.hither);
+		prog.setUniform("yon", this.yon - this.hither);
     },
 
     make_view_matrix : function(){
