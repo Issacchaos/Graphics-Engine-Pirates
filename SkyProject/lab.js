@@ -148,7 +148,7 @@ function main(){
     //SKY
     sky = new Sky(loader);
     skyprog = new tdl.programs.Program(loader, "shaders/skyvs.txt", "shaders/skyfs.txt");
-    skytex = new tdl.CubeMap(loader, {urls:["assets/skyPX.png", "assets/skyNX.png", "assets/skyPY.png", "assets/skyNY.png", "assets/skyPZ.png", "assets/skyNZ.png"]});
+    skytex = new tdl.CubeMap(loader, {urls:["assets/right.png", "assets/left.png", "assets/up.png", "assets/down.png", "assets/front.png", "assets/back.png"]});
     //skytex = new tdl.Texture2D(loader, "assets/skyPX.png");
 
     // End loader
