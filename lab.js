@@ -440,13 +440,17 @@ function draw(){
 		drawOcean(prog2);
     }
 	else{
+		//update each ships positionso in the same place when switched
 		if(document.getElementById('environ').checked) {
+			ship.pos = chromeship.pos;
 			drawShip(chromeship, envmapprog, true);
 		}
 		else if(document.getElementById('noise').checked) {
+			chromeship.pos = ship.pos;
 			drawShip(ship, noiseProg, false);
 		}
 		else{
+			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
 		drawNessie(prog1);
