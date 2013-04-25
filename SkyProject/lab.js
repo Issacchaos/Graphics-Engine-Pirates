@@ -417,7 +417,6 @@ function drawBlur(prog1)
 
 function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
-    drawSky(skyprog);
 	//BLURRING
 	if(document.getElementById('blur').checked)
 	{
@@ -497,6 +496,7 @@ function draw(){
 	Shooting();
 	LensFlare();
     shadowFBO.texture.unbind();
+    drawSky(skyprog);
     tdl.webgl.requestAnimationFrame(draw);
 }
 

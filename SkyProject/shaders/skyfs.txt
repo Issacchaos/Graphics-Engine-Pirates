@@ -9,7 +9,10 @@ uniform vec3 G;
 uniform vec3 S,W,B,Z,T;
 uniform float altsun;
 uniform float exposure;
+
 uniform samplerCube cubetexture;
+uniform sampler2D basetexture;
+
 uniform vec4 eyePos;
 
 void main(){
@@ -30,11 +33,17 @@ void main(){
     float X = (Y*x)/y;
     float Z = (Y*(1.-x-y)/y);
 
-    vec3 V = eyePos.xyz - v_worldPos.xyz;
-    float eyeDistance = length(V);
-    V=1.0/eyeDistance*V;
-    vec3 VR = reflect(-V.xyz,N.xyz);
-    vec4 cubec = textureCube(cubetexture, VR);
+    vec4 Pt = eyePos * v_worldPos;
+
+    vec4 objc = textureCube(cubetexture, (Pt.xyz / Pt.w));
+    
+    
+    vec4 basecolor;
+
+    basecolor.rgb = objc.rbg;
+
+    vec4 c = basecolor;
+
 
     //column major
     mat3 M = mat3(3.240479, -1.53715, -0.498535,
@@ -45,6 +54,8 @@ void main(){
     rgb = 1.0 - 1.0 / exp(rgb/exposure);
     
     rgb=clamp(rgb,0.0,1.0);
-    gl_FragColor.rgb = rgb * cubec.rgb;
+
+
+    gl_FragColor.rgb = rgb * basecolor.rbg;
     gl_FragColor.a = 1.0;
 }

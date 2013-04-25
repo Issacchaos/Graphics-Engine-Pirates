@@ -82,7 +82,7 @@ void main(){
     
     basecolor.rgb += texture2D(emittexture,v_texcoord.st).rgb;
     
-    vec4 c = mix(basecolor,fogColor,fogpct);
+    vec4 c = basecolor;
     
     gl_FragColor = c;
 	

@@ -11,13 +11,13 @@ uniform mat4 viewProjMatrix;
 uniform vec4 eyePos;
 
 
+
 void main()
 {
-	vec4 p = position * eyePos;
-	p = p * viewProjMatrix;
+	vec4 p = position;
     v_texcoord = texcoord.st;
     v_worldPos = p;
     vec4 n = normal * worldMatrix;
     v_normal=n;
-    gl_Position= position * worldMatrix;
+    gl_Position = p * viewProjMatrix;
 }
