@@ -1,0 +1,50 @@
+precision mediump float;
+
+varying vec2 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+
+uniform vec3 H;
+uniform vec3 G;
+uniform vec3 S,W,B,Z,T;
+uniform float altsun;
+uniform float exposure;
+uniform samplerCube cubetexture;
+uniform vec4 eyePos;
+
+void main(){
+    float altp = v_texcoord.s * 3.14159265358979323/2.0;
+    float diffsunp = v_texcoord.t*3.141592653589879323;
+    
+    vec3 N = v_normal.xyz;
+    N=normalize(N);
+
+    vec3 perez = 
+        Z * ( 
+            ( (1.0+H*exp(G/cos(altp))) * (1.0+S*exp(W*diffsunp)+B*pow(cos(diffsunp),2.0)) )/
+            ( (1.0+H*exp(G))*(1.0+S*exp(W*altsun)+B*pow(cos(altsun),2.0)) ) 
+            );
+    float Y = perez[0];
+    float x = perez[1];
+    float y = perez[2];
+    float X = (Y*x)/y;
+    float Z = (Y*(1.-x-y)/y);
+
+    vec3 V = eyePos.xyz - v_worldPos.xyz;
+    float eyeDistance = length(V);
+    V=1.0/eyeDistance*V;
+    vec3 VR = reflect(-V.xyz,N.xyz);
+    vec4 cubec = textureCube(cubetexture, VR);
+
+    //column major
+    mat3 M = mat3(3.240479, -1.53715, -0.498535,
+                    -0.969256, 1.875991, 0.041556,
+                    0.055648, -0.204043, 1.057311);
+                    
+    vec3 rgb = vec3(X,Y,Z) * M;
+    rgb = 1.0 - 1.0 / exp(rgb/exposure);
+    
+    rgb=clamp(rgb,0.0,1.0);
+    gl_FragColor.rgb = rgb * cubec.rgb;
+    gl_FragColor.a = 1.0;
+}

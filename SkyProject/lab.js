@@ -79,6 +79,11 @@ var usqblur;
 var bWater;
 
 
+// SKY STUFF
+var skytex;
+var skyprog;
+
+
 
 SunCamera.yon = 1000.0;
 var mapMatrix = [0.5,0,0,0,
@@ -139,10 +144,15 @@ function main(){
 	bquadprog = new tdl.programs.Program(loader,"shaders/FBOCompVS.txt","shaders/FBOCompFS.txt");
 	bSuperShader = new tdl.programs.Program(loader, "shaders/SuperShaderBlurVS.txt", "shaders/SuperShaderBlurFS.txt");
 	bWater = new tdl.programs.Program(loader,"shaders/watervs.txt", "shaders/SuperShaderBlurFS.txt");
-    loader.finish();
     
     //SKY
     sky = new Sky(loader);
+    skyprog = new tdl.programs.Program(loader, "shaders/skyvs.txt", "shaders/skyfs.txt");
+    skytex = new tdl.CubeMap(loader, {urls:["assets/skyPX.png", "assets/skyNX.png", "assets/skyPY.png", "assets/skyNY.png", "assets/skyPZ.png", "assets/skyNZ.png"]});
+    //skytex = new tdl.Texture2D(loader, "assets/skyPX.png");
+
+    // End loader
+    loader.finish();
 }
 
 function loaded(){
@@ -404,12 +414,10 @@ function drawBlur(prog1)
 	
 }
 
-function drawSky(prog1) {
-	sky.draw(prog1);
-}
 
 function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+    drawSky(skyprog);
 	//BLURRING
 	if(document.getElementById('blur').checked)
 	{
@@ -425,7 +433,6 @@ function draw(){
 		drawShip(ship, prog1, false);
 		drawNessie(prog1);
 		drawOcean(prog2);
-		drawSky(prog1);
 		
 		fboblur.unbind();
 		drawBlur(bquadprog);
@@ -489,7 +496,6 @@ function draw(){
     
 	Shooting();
 	LensFlare();
-	
     shadowFBO.texture.unbind();
     tdl.webgl.requestAnimationFrame(draw);
 }
@@ -844,4 +850,38 @@ function drawNoise(){
     camera.draw(noiseProg);
     ship.draw(noiseProg);
     noiseProg.setUniform("objmin", ship.bboxMin);
+}
+
+function drawSky(skyprog){
+    skyprog.use();
+    skyprog.setUniform("worldMatrix", tdl.identity());
+    skyprog.setUniform("viewProjMatrix", camera.viewProjMatrix);
+    skyprog.setUniform("eyePos", camera.eye);
+    skyprog.setUniform("cubetexture", skytex);
+    
+    var T = 2.0;  //turbidity
+    var a = 45.0;    //sun altitude
+    var exposure = 10;
+    
+    skyprog.setUniform("exposure",exposure);
+    //console.log(T,a,exposure);
+    function tan(x){
+        return Math.tan(x);
+    }
+    var a=a/180.0*3.14159265358979323;
+    skyprog.setUniform("altsun",a);
+    skyprog.setUniform("H",[0.1787*T-1.4630,-0.0193*T-0.2592,-0.0167*T-0.2608]);
+    skyprog.setUniform("G",[-0.3554*T-0.4275,-0.0665*T+0.0008,-0.095*T+0.0092]);
+    skyprog.setUniform("S",[-0.0227*T+5.3251,-0.0004*T+0.2125,-0.0079*T+0.2102]);
+    skyprog.setUniform("W",[0.1206*T-2.5771,-0.0641*T-0.8989,-0.0441*T-1.6537]);
+    skyprog.setUniform("B",[-0.067*T+0.3703,-0.0033*T+0.0452,-0.0109*T+0.0529]);
+    skyprog.setUniform("Z",[
+        (4.0453*T-4.971)*tan((4/9-T/120)*(3.14159265358979323-2*a))-0.2155*T+2.4192,
+        (0.0017*a*a*a-0.0037*a*a+0.0021*a)*T*T+
+            (-0.0290*a*a*a+0.0638*a*a-0.032*a+0.0039)*T+
+            (0.1169*a*a*a-0.212*a*a+0.0605*a+0.2589),
+        (0.0028*a*a*a-0.0061*a*a+0.0032*a)*T*T+
+            (-0.0421*a*a*a+0.0897*a*a-0.0415*a+0.0052)*T+
+            (0.1535*a*a*a-0.2676*a*a+0.0667*a+0.2669)]);
+    sky.draw(skyprog);
 }
