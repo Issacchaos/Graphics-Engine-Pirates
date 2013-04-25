@@ -1,7 +1,7 @@
 "use strict";
 
 function Nessie(loader){
-    this.M = new SuperMesh(loader,"assets/nessie5.spec.mesh");
+    this.M = new SuperMesh(loader,"assets/nessie8.spec.mesh");
     this.pos = [0,0,0,1];
     this.facing = [1,0,0,0];
     this.zeroanglefacing = [1,0,0,0];
@@ -49,21 +49,22 @@ Nessie.prototype.setPosRot = function(p, a){
     {
     	    this.angle = a;
     }
-    
+    this.R2 = tdl.axisRotation( [1,0,0],tdl.degToRad(-90));
     this.R = tdl.axisRotation( [0,1,0],tdl.degToRad(this.angle));
+	this.FR = tdl.mul(this.R2,this.R);
     this.facing = tdl.mul( this.zeroanglefacing , this.R);
     this.T = tdl.translation(this.pos);
-    this.RT = tdl.mul(this.R,this.T);
+    this.RT = tdl.mul(this.FR,this.T);
 }
 
 Nessie.prototype.draw = function(prog, mode){
     prog.setUniform("worldMatrix",this.RT);
 	if (mode === 1)
 	{
-		this.M.draw(prog,1,["nessie5_Mball_009_Mesh.binary."]);
+		this.M.draw(prog,1,["nessie8_Mball_009_Mesh.binary."]);
 	}
 	else if (mode === 2)
 	{
-		this.M.draw(prog,1,["nessie5_Mball_009_Mesh.binarylinefur."]);
+		this.M.drawFurMesh(prog);
 	}
 }

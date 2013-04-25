@@ -82,7 +82,12 @@ var mapMatrix = [0.5,0,0,0,
 				 0,0.5,0,0,
 				 0,0,0.5,0,
 				 0.5,0.5,0.5,1];
+var shadow = false;
 //FIX: put in bool for not constant black after pushing shadows button
+
+//Kinematics
+var kineprog;
+var currframe  = 10;
 
 function main(){
     cvs = document.getElementById("cvs");
@@ -137,7 +142,10 @@ function main(){
 	shadowDepthProg = new tdl.programs.Program(loader,"shaders/shadowvs.txt","shaders/shadowfs.txt");
 	shadowDrawProg2 = new tdl.programs.Program(loader,"shaders/shadowvs2.txt","shaders/shadowfs2.txt");
 	
-    loader.finish();
+	//Kinematics
+	kineprog = new tdl.programs.Program(loader, "shaders/KinetoVS.txt","shaders/kinetoFS.txt");
+    
+	loader.finish();
 }
 
 function loaded(){
@@ -176,7 +184,7 @@ function loaded(){
 	shadowFBO = new tdl.Framebuffer(2048,2048);
 	
     //gl.clearColor(0.4,0.7,0.9,1.0);
-    gl.clearColor(1.0,1.0,1.0,1.0);
+    gl.clearColor(0.4,0.7,0.9,1.0);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -195,6 +203,9 @@ function keyup(ev){
 
 function update(){
     setTimeout(update,33);
+	
+	currframe += 0.5;
+	if(currframe >= 41) currframe = 10;
     
     if(then === undefined ){
         then=Date.now();
@@ -417,6 +428,7 @@ function draw(){
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
 
     if(document.getElementById('shadows').checked) {
+		shadow = true;
 		shadowFBO.texture.unbind();
     	shadowFBO.bind();
 		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
@@ -443,10 +455,11 @@ function draw(){
 			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
-		drawNessie(prog1,furprog);
+		drawNessie(kineprog,furprog);
 		drawOcean(prog2);
     }
 	else{
+		shadow = false;
 		//update each ships positionso in the same place when switched
 		if(document.getElementById('environ').checked) {
 			ship.pos = chromeship.pos;
@@ -460,7 +473,7 @@ function draw(){
 			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
-		drawNessie(prog1,furprog);
+		drawNessie(kineprog,furprog);
 		drawOcean(prog2);
 	}
 	Shooting(prog1);
@@ -533,7 +546,7 @@ function Fur(furprog){
     
     furprog.setUniform("fogNear",80);
     furprog.setUniform("fogDelta", 30);
-    furprog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
+    furprog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     furprog.setUniform("attenuation",[1,0.0,0.0001,0]);
     
 	furprog.setUniform("worldMatrix",tdl.identity());
@@ -587,8 +600,7 @@ function LensFlare(){
 	flareProg3.setUniform("fbo1", fboFlare1.texture);	
 	gl.drawArrays(gl.POINTS,0,(256));	
 	fboFlare2.unbind();	
-	//gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color
-    gl.clearColor(1.0,1.0,1.0,1.0);
+	gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color
 	//****************************************************************************************	
 	flareProg1.use();								//now on to draw the sun geometry, and lens flares.		
 	flareProg1.setUniform("FBO2", fboFlare2.texture);
@@ -659,7 +671,7 @@ function Shooting(prog){
     
     prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	camera.draw(prog);
 	for(var b = 0; b < cBalls.length; ++b)
@@ -676,6 +688,7 @@ function Shooting(prog){
 function drawShip(theShip, prog, chrome){
 	if(document.getElementById('noise').checked) {
 		prog.use();
+		prog.setUniform("shadow",shadow);
 		if(document.getElementById('shadows').checked){
 			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
 			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
@@ -693,6 +706,7 @@ function drawShip(theShip, prog, chrome){
 	}
 	else{
 		prog.use();
+		prog.setUniform("shadow",shadow);
 		if(document.getElementById('shadows').checked){
 			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
 			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
@@ -713,7 +727,7 @@ function drawShip(theShip, prog, chrome){
 		
 		prog.setUniform("fogNear",80);
 		prog.setUniform("fogDelta", 30);
-		prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
+		prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
 		prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 		dss_keep(); // refl
 		
@@ -768,6 +782,7 @@ function drawShip(theShip, prog, chrome){
 
 function drawNessie(prog, furprog){
 	prog.use();
+	prog.setUniform("shadow",shadow);
 	if(document.getElementById('shadows').checked){
 			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
 			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
@@ -788,8 +803,9 @@ function drawNessie(prog, furprog){
     
     prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
+	prog.setUniform("currframe", currframe);
 	camera.draw(prog);
 	nessie.draw(prog,1);
 	if(document.getElementById('fur').checked) {
@@ -799,6 +815,7 @@ function drawNessie(prog, furprog){
 
 function drawOcean(prog){
 	prog.use();
+	prog.setUniform("shadow",shadow);
 	if(document.getElementById('shadows').checked){
 			prog.setUniform("lightViewMatrix",SunCamera.viewMatrix);
 			prog.setUniform("lightProjMatrix",SunCamera.projMatrix);
@@ -816,7 +833,7 @@ function drawOcean(prog){
     );
 	prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[1.0,1.0,1.0,0.7]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	prog.setUniform("t", t);
 	prog.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);

@@ -14,6 +14,7 @@ uniform mat4 lightProjMatrix;
 uniform mat4 mapMatrix;
 uniform float lightHither;
 uniform float lightYon;
+uniform bool shadow;
 
 varying vec4 v_texcoord;
 varying vec4 v_worldPos;
@@ -130,19 +131,25 @@ void main(){
 	z1 = (z1 - lightHither)/(lightYon - lightHither);
 	float z2 = texture2D(shadowtexture,wPos.xy).r;
     
-	if(z1 < 0.0 || z1 > (z2+0.005))
+	if(!shadow){
+		if(n < -0.5){
+			gl_FragColor = camoColor1;
+		}else if(n < 0.0 && n > -0.5){
+			gl_FragColor = camoColor2;
+		}else if(n > 0.0 && n < 0.5){
+			gl_FragColor = camoColor3;
+		}else{
+			gl_FragColor = camoColor4;
+	}
+	}
+	else if(any(bvec4(greaterThan(wPos.xy,vec2(1.0,1.0)), lessThan(wPos.xy, vec2(0.0,0.0))))){
+		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+	}
+	else if(z1 < 0.0 || z1 > (z2+0.005))
 	{
 		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
 	}
-    else if(n < -0.5){
-		gl_FragColor = camoColor1;
-	}else if(n < 0.0 && n > -0.5){
-		gl_FragColor = camoColor2;
-	}else if(n > 0.0 && n < 0.5){
-		gl_FragColor = camoColor3;
-	}else{
-		gl_FragColor = camoColor4;
-	}
+    
     
 }
 

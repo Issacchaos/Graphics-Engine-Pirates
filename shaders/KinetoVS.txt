@@ -1,0 +1,79 @@
+attribute vec4 position;
+attribute vec4 texcoord;
+attribute vec4 normal;
+attribute vec4 weights;
+attribute vec4 bones;
+
+uniform sampler2D bonetexture;
+uniform sampler2D quatexture;
+uniform vec4 bonetexture_size;
+uniform vec4 quatexture_size;
+uniform float currframe;
+//#define currframe 35.0
+#define MAX_BONES 4
+
+uniform mat4 worldMatrix;
+uniform mat4 viewProjMatrix;
+uniform mat4 trans;
+uniform mat4 reflMatrix; // refl
+uniform vec4 mirrorPos; // refl
+
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+varying vec4 v_tangent;
+varying float debug;
+
+vec4 qmul( vec4 q, vec4 v ){ 
+	float aMul = (q.a * v.a) - dot(q.xyz,v.xyz);
+	vec3 vectMul = (q.a * v.xyz) + (v.a * q.xyz) + cross(q.xyz,v.xyz);
+	return vec4(vectMul,aMul);
+}
+
+vec3 bone_influence(vec3 p, float bidx, float frame)
+{
+		for(int i=0;i<MAX_BONES;++i)
+		{
+         vec4 headpos = texture2D(bonetexture, vec2(bidx * bonetexture_size.z,0));
+         p.xyz -= headpos.xyz;
+         vec4 q = texture2D(quatexture, vec2(bidx * quatexture_size.z,frame * quatexture_size.w));
+		 //q = vec4(0.0,0.374,0.0,0.927);
+         p = qmul( qmul(q,vec4(p,0.0)) , vec4(-q.x,-q.y,-q.z,q.a )).xyz;
+         p.xyz += headpos.xyz;
+         bidx = headpos.w;
+         if( bidx == -1.0 )
+             break ;
+		}
+		return p;
+}
+
+vec3 influence4(vec3 p, float frame){
+     vec3 p0 = bone_influence(p,bones[0],frame);
+     vec3 p1 = bone_influence(p,bones[1],frame);
+     vec3 p2 = bone_influence(p,bones[2],frame);
+	 vec3 p3 = bone_influence(p,bones[3],frame);
+	 return p0;
+     return weights[0]*p0 + weights[1]*p1 + weights[2]*p2 + weights[3]*p3;
+}
+ 
+vec3 influence(vec3 p, float frame){
+     float ff = floor(frame);
+     float fc = ceil(frame);
+     return mix( 
+         influence4(p,ff) , 
+         influence4(p,fc) ,
+         fract(frame) );
+}
+
+void main(){
+	debug = bones[0];
+	vec4 p = vec4( influence( position.xyz, currframe ) , 1.0 );
+    p = p * worldMatrix;
+	vec4 n = vec4( influence( normal.xyz, currframe ), 0.0 );
+    n = n * worldMatrix;
+    v_normal=n;
+    v_worldPos = p;
+    v_texcoord=texcoord;
+    gl_Position = p * reflMatrix * trans * viewProjMatrix;
+}

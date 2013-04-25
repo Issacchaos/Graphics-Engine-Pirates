@@ -16,6 +16,7 @@ uniform float fogNear;
 uniform float fogDelta;
 uniform vec4 fogColor;
 uniform mat4 worldMatrix;
+uniform bool shadow;
 
 uniform mat4 lightViewMatrix;
 uniform mat4 lightProjMatrix;
@@ -97,7 +98,13 @@ void main(){
 	z1 = (z1 - lightHither)/(lightYon - lightHither);
 	float z2 = texture2D(shadowtexture,wPos.xy).r;
 	
-	if(z1 < 0.0 || z1 > (z2+0.005))
+	if(!shadow){
+		gl_FragColor = c;
+	}
+	else if(any(bvec4(greaterThan(wPos.xy,vec2(1.0,1.0)), lessThan(wPos.xy, vec2(0.0,0.0))))){
+		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+	}
+	else if(z1 < 0.0 || z1 > (z2+0.005))
 	{
 		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
 	}
