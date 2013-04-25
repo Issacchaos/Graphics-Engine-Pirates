@@ -2,3 +2,5 @@
 on ship on the web page, it will not draw textures on any of the
 objects unless you apply an environment option. When camo or
 environment maps selected, ship is only object with texture.
+( It works until you select shadows. So something in shadows is
+     causing it to break.)
