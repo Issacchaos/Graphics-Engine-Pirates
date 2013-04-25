@@ -370,7 +370,7 @@ function finalDraw(){
     if(document.getElementById("blur").checked)
     {
         depth.bind();
-        draw();
+        drawDepth(depthProg);
         depth.unbind();
     
         blur[0].bind();
@@ -430,9 +430,19 @@ function draw(){
 		drawNessie(prog1);
 		drawOcean(prog2);
 	}
-	Shooting();
+	Shooting(prog1);
     shadowFBO.texture.unbind();
 }
+
+function drawDepth(prog){
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT );
+
+	drawShip(ship, prog, false);
+	drawNessie(prog);
+	drawOcean(prog);
+	Shooting(prog);
+}
+
 
 function drawBlur(prog1, prog2)
 {
@@ -601,7 +611,7 @@ function LensFlare(){
 
 }
 
-function Shooting(){
+function Shooting(prog1){
 
 	prog1.use();
 	prog1.setUniform("trans", tdl.identity());
