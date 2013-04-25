@@ -244,8 +244,12 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			HitDetection(ship,nessie,13,13);
-			HitDetection(chromeship,nessie,13,13);
+			if(document.getElementById('environ').checked) {
+				HitDetection(chromeship,nessie,13,13);
+			}
+			else{
+				HitDetection(ship,nessie,13,13);
+			}
 		}
 		
     }
@@ -257,8 +261,12 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			HitDetection(ship,nessie,13,13);
-			HitDetection(chromeship,nessie,13,13);
+			if(document.getElementById('environ').checked) {
+				HitDetection(chromeship,nessie,13,13);
+			}
+			else{
+				HitDetection(ship,nessie,13,13);
+			}
 		}
 		
     }
@@ -270,8 +278,12 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			HitDetection(ship,nessie,13,13);
-			HitDetection(chromeship,nessie,13,13);
+			if(document.getElementById('environ').checked) {
+				HitDetection(chromeship,nessie,13,13);
+			}
+			else{
+				HitDetection(ship,nessie,13,13);
+			}
 		}
 		
     }
@@ -283,8 +295,12 @@ function update(){
 		//Calling Hit Detection
 	
 		if(document.getElementById('collision').checked) {
-			HitDetection(ship,nessie,13,13);
-			HitDetection(chromeship,nessie,13,13);
+			if(document.getElementById('environ').checked) {
+				HitDetection(chromeship,nessie,13,13);
+			}
+			else{
+				HitDetection(ship,nessie,13,13);
+			}
 		}
 		
     }
@@ -405,15 +421,21 @@ function draw(){
 		ship.draw(shadowDepthProg);
 		nessie.draw(shadowDepthProg,1);
 		shadowFBO.unbind();
+		
+		//update each ships positionso in the same place when switched
 		if(document.getElementById('environ').checked) {
+			ship.pos = chromeship.pos;
 			drawShip(chromeship, envmapprog, true);
 		}
 		else if(document.getElementById('noise').checked) {
+			chromeship.pos = ship.pos;
 			drawShip(ship, noiseProg, false);
 		}
 		else{
+			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
 		}
+		
 		drawNessie(prog1);
 		drawOcean(prog2);
     }
