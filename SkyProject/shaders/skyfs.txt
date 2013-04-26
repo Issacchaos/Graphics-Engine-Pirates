@@ -33,9 +33,9 @@ void main(){
     float X = (Y*x)/y;
     float Z = (Y*(1.-x-y)/y);
 
-    vec4 Pt = eyePos * v_worldPos;
+    vec4 Pt = v_worldPos;
 
-    vec4 objc = textureCube(cubetexture, (Pt.xyz / Pt.w));
+    vec4 objc = textureCube(cubetexture, Pt.xyz);
     
     
     vec4 basecolor;

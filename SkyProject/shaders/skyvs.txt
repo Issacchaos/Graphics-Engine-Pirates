@@ -14,9 +14,11 @@ uniform vec4 eyePos;
 
 void main()
 {
-	vec4 p = position;
+	vec4 p; 
+	p = vec4(position.xyz + eyePos.xyz, 1.0);
     v_texcoord = texcoord.st;
-    v_worldPos = p;
+    v_worldPos = position;
+
     vec4 n = normal * worldMatrix;
     v_normal=n;
     gl_Position = p * viewProjMatrix;

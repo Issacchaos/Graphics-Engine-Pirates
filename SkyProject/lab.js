@@ -148,7 +148,7 @@ function main(){
     //SKY
     sky = new Sky(loader);
     skyprog = new tdl.programs.Program(loader, "shaders/skyvs.txt", "shaders/skyfs.txt");
-    skytex = new tdl.CubeMap(loader, {urls:["assets/right.png", "assets/left.png", "assets/up.png", "assets/down.png", "assets/front.png", "assets/back.png"]});
+    skytex = new tdl.CubeMap(loader, {urls:["assets/back.png", "assets/front.png", "assets/up.png", "assets/down.png", "assets/left.png", "assets/right.png"]});
     //skytex = new tdl.Texture2D(loader, "assets/skyPX.png");
 
     // End loader
@@ -494,9 +494,9 @@ function draw(){
 	}
     
 	Shooting();
+	drawSky(skyprog);
 	LensFlare();
     shadowFBO.texture.unbind();
-    drawSky(skyprog);
     tdl.webgl.requestAnimationFrame(draw);
 }
 
@@ -857,6 +857,7 @@ function drawSky(skyprog){
     skyprog.setUniform("worldMatrix", tdl.identity());
     skyprog.setUniform("viewProjMatrix", camera.viewProjMatrix);
     skyprog.setUniform("eyePos", camera.eye);
+    console.log(camera.eye);
     skyprog.setUniform("cubetexture", skytex);
     
     var T = 2.0;  //turbidity
