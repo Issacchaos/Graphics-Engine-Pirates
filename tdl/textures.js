@@ -225,9 +225,6 @@ tdl.textures.ColorTexture = function(data, opt_format, opt_type) {
         data.format = opt_format;
     if( opt_type !== undefined )
         data.type = opt_type;
-	if (!gl.getExtension("OES_texture_float")) {
-        throw(new Error("Requires OES_texture_float extension"));
-    }
     tdl.textures.TextureX.call(this,gl.TEXTURE_2D);
     this.setData(data);
 }

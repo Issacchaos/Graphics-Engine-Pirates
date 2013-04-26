@@ -83,11 +83,15 @@ var mapMatrix = [0.5,0,0,0,
 				 0,0,0.5,0,
 				 0.5,0.5,0.5,1];
 var shadow = false;
-//FIX: put in bool for not constant black after pushing shadows button
 
 //Kinematics
 var kineprog;
 var currframe  = 10;
+
+// SKY STUFF
+var skytex;
+var skyprog;
+var sky;
 
 function main(){
     cvs = document.getElementById("cvs");
@@ -145,6 +149,11 @@ function main(){
 	//Kinematics
 	kineprog = new tdl.programs.Program(loader, "shaders/KinetoVS.txt","shaders/kinetoFS.txt");
     
+	 //SKY
+    sky = new Sky(loader);
+    skyprog = new tdl.programs.Program(loader, "shaders/skyvs.txt", "shaders/skyfs.txt");
+    skytex = new tdl.CubeMap(loader, {urls:["assets/back.png", "assets/front.png", "assets/up.png", "assets/down.png", "assets/left.png", "assets/right.png"]});
+	
 	loader.finish();
 }
 
@@ -184,7 +193,7 @@ function loaded(){
 	shadowFBO = new tdl.Framebuffer(2048,2048);
 	
     //gl.clearColor(0.4,0.7,0.9,1.0);
-    gl.clearColor(0.4,0.7,0.9,1.0);
+    gl.clearColor(0.4,0.7,0.9,0.2);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -419,6 +428,7 @@ function finalDraw(){
         draw();
     }
     
+	drawSky(skyprog);
     LensFlare();
     
     tdl.webgl.requestAnimationFrame(finalDraw);
@@ -546,7 +556,7 @@ function Fur(furprog){
     
     furprog.setUniform("fogNear",80);
     furprog.setUniform("fogDelta", 30);
-    furprog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    furprog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
     furprog.setUniform("attenuation",[1,0.0,0.0001,0]);
     
 	furprog.setUniform("worldMatrix",tdl.identity());
@@ -600,7 +610,7 @@ function LensFlare(){
 	flareProg3.setUniform("fbo1", fboFlare1.texture);	
 	gl.drawArrays(gl.POINTS,0,(256));	
 	fboFlare2.unbind();	
-	gl.clearColor(0.4,0.7,0.9,1.0);				//reset the clear color to original color
+	gl.clearColor(0.4,0.7,0.9,0.2);				//reset the clear color to original color
 	//****************************************************************************************	
 	flareProg1.use();								//now on to draw the sun geometry, and lens flares.		
 	flareProg1.setUniform("FBO2", fboFlare2.texture);
@@ -671,7 +681,7 @@ function Shooting(prog){
     
     prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	camera.draw(prog);
 	for(var b = 0; b < cBalls.length; ++b)
@@ -727,7 +737,7 @@ function drawShip(theShip, prog, chrome){
 		
 		prog.setUniform("fogNear",80);
 		prog.setUniform("fogDelta", 30);
-		prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+		prog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
 		prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 		dss_keep(); // refl
 		
@@ -803,7 +813,7 @@ function drawNessie(prog, furprog){
     
     prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	prog.setUniform("currframe", currframe);
 	camera.draw(prog);
@@ -833,7 +843,7 @@ function drawOcean(prog){
     );
 	prog.setUniform("fogNear",80);
     prog.setUniform("fogDelta", 30);
-    prog.setUniform("fogColor",[0.4,0.7,0.9,1.0]);
+    prog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
     prog.setUniform("attenuation",[1,0.0,0.0001,0]);
 	prog.setUniform("t", t);
 	prog.setUniform("d", [-1.0,0.0,0.0, 1.0,0.0,1.0, -0.75,0.0,-0.3]);
@@ -885,4 +895,42 @@ function drawNoise(){
     camera.draw(noiseProg);
     ship.draw(noiseProg);
     noiseProg.setUniform("objmin", ship.bboxMin);
+}
+
+function drawSky(skyprog){
+    skyprog.use();
+    skyprog.setUniform("worldMatrix", tdl.identity());
+    skyprog.setUniform("viewProjMatrix", camera.viewProjMatrix);
+    skyprog.setUniform("eyePos", camera.eye);
+	skyprog.setUniform("fogNear",80);
+	skyprog.setUniform("fogDelta", 30);
+	skyprog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
+    //console.log(camera.eye);
+    skyprog.setUniform("cubetexture", skytex);
+    
+    var T = 2.0;  //turbidity
+    var a = 45.0;    //sun altitude
+    var exposure = 10;
+    
+    skyprog.setUniform("exposure",exposure);
+    //console.log(T,a,exposure);
+    function tan(x){
+        return Math.tan(x);
+    }
+    var a=a/180.0*3.14159265358979323;
+    skyprog.setUniform("altsun",a);
+    skyprog.setUniform("H",[0.1787*T-1.4630,-0.0193*T-0.2592,-0.0167*T-0.2608]);
+    skyprog.setUniform("G",[-0.3554*T-0.4275,-0.0665*T+0.0008,-0.095*T+0.0092]);
+    skyprog.setUniform("S",[-0.0227*T+5.3251,-0.0004*T+0.2125,-0.0079*T+0.2102]);
+    skyprog.setUniform("W",[0.1206*T-2.5771,-0.0641*T-0.8989,-0.0441*T-1.6537]);
+    skyprog.setUniform("B",[-0.067*T+0.3703,-0.0033*T+0.0452,-0.0109*T+0.0529]);
+    skyprog.setUniform("Z",[
+        (4.0453*T-4.971)*tan((4/9-T/120)*(3.14159265358979323-2*a))-0.2155*T+2.4192,
+        (0.0017*a*a*a-0.0037*a*a+0.0021*a)*T*T+
+            (-0.0290*a*a*a+0.0638*a*a-0.032*a+0.0039)*T+
+            (0.1169*a*a*a-0.212*a*a+0.0605*a+0.2589),
+        (0.0028*a*a*a-0.0061*a*a+0.0032*a)*T*T+
+            (-0.0421*a*a*a+0.0897*a*a-0.0415*a+0.0052)*T+
+            (0.1535*a*a*a-0.2676*a*a+0.0667*a+0.2669)]);
+    sky.draw(skyprog);
 }

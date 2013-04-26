@@ -1,0 +1,25 @@
+attribute vec4 texcoord;
+attribute vec4 position;
+attribute vec4 normal;
+
+varying vec2 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+
+uniform mat4 worldMatrix;
+uniform mat4 viewProjMatrix;
+uniform vec4 eyePos;
+
+
+
+void main()
+{
+	vec4 p; 
+	p = vec4(position.xyz + eyePos.xyz, 1.0);
+    v_texcoord = texcoord.st;
+    v_worldPos = position;
+
+    vec4 n = normal * worldMatrix;
+    v_normal=n;
+    gl_Position = p * viewProjMatrix;
+}
