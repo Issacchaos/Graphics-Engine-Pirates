@@ -902,9 +902,6 @@ function drawSky(skyprog){
     skyprog.setUniform("worldMatrix", tdl.identity());
     skyprog.setUniform("viewProjMatrix", camera.viewProjMatrix);
     skyprog.setUniform("eyePos", camera.eye);
-	skyprog.setUniform("fogNear",80);
-	skyprog.setUniform("fogDelta", 30);
-	skyprog.setUniform("fogColor",[0.4,0.7,0.9,0.2]);
     //console.log(camera.eye);
     skyprog.setUniform("cubetexture", skytex);
     
