@@ -9,9 +9,6 @@ uniform vec3 G;
 uniform vec3 S,W,B,Z,T;
 uniform float altsun;
 uniform float exposure;
-uniform float fogNear;
-uniform float fogDelta;
-uniform vec4 fogColor;
 
 uniform samplerCube cubetexture;
 uniform sampler2D basetexture;
@@ -24,10 +21,6 @@ void main(){
     
     vec3 N = v_normal.xyz;
     N=normalize(N);
-	
-	vec3 V = eyePos.xyz - v_worldPos.xyz;
-    float eyeDistance = length(V);
-    V=1.0/eyeDistance*V;
 
     vec3 perez = 
         Z * ( 
@@ -48,7 +41,7 @@ void main(){
     vec4 basecolor;
 
     basecolor.rgb = objc.rbg;
-	basecolor.a = 1.0;
+
     vec4 c = basecolor;
 
 
@@ -61,10 +54,8 @@ void main(){
     rgb = 1.0 - 1.0 / exp(rgb/exposure);
     
     rgb=clamp(rgb,0.0,1.0);
-	
-	float fogpct = ( eyeDistance - fogNear ) / (fogDelta);
-    fogpct = clamp(fogpct,0.0,1.0);
-	vec4 d = mix(basecolor,fogColor,fogpct);
 
-    gl_FragColor =  d;
+
+    gl_FragColor.rgb = rgb * basecolor.rgb;
+    gl_FragColor.a = 1.0;
 }

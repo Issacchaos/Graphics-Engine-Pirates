@@ -83,7 +83,6 @@ var mapMatrix = [0.5,0,0,0,
 				 0,0,0.5,0,
 				 0.5,0.5,0.5,1];
 var shadow = false;
-//FIX: put in bool for not constant black after pushing shadows button
 
 //Kinematics
 var kineprog;
@@ -150,7 +149,7 @@ function main(){
 	//Kinematics
 	kineprog = new tdl.programs.Program(loader, "shaders/KinetoVS.txt","shaders/kinetoFS.txt");
     
-	//SKY
+	 //SKY
     sky = new Sky(loader);
     skyprog = new tdl.programs.Program(loader, "shaders/skyvs.txt", "shaders/skyfs.txt");
     skytex = new tdl.CubeMap(loader, {urls:["assets/back.png", "assets/front.png", "assets/up.png", "assets/down.png", "assets/left.png", "assets/right.png"]});
@@ -429,7 +428,7 @@ function finalDraw(){
         draw();
     }
     
-	drawSky(skyprog);
+	
     LensFlare();
     
     tdl.webgl.requestAnimationFrame(finalDraw);
@@ -488,6 +487,7 @@ function draw(){
 		drawOcean(prog2);
 	}
 	Shooting(prog1);
+	drawSky(skyprog);
     shadowFBO.texture.unbind();
 }
 
@@ -897,6 +897,7 @@ function drawNoise(){
     ship.draw(noiseProg);
     noiseProg.setUniform("objmin", ship.bboxMin);
 }
+
 function drawSky(skyprog){
     skyprog.use();
     skyprog.setUniform("worldMatrix", tdl.identity());
