@@ -93,6 +93,7 @@ var skytex;
 var skyprog;
 var sky;
 
+
 function main(){
     cvs = document.getElementById("cvs");
     gl = tdl.webgl.setupWebGL(cvs,{stencil:true,alpha:false});
