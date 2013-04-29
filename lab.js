@@ -20,6 +20,10 @@ var currentShip;
 //Fur
 var furprog;
 
+//Cel Shading
+var celprog, outlineprog;
+var celSampler, shipCelTex;
+
 /*STUFF FOR LENS FLARE*/
 var lensCamera = new Camera({
     eye: [0,5,10],
@@ -125,6 +129,12 @@ function main(){
 	
 	//Fur
 	furprog = new tdl.programs.Program(loader,"shaders/furVS.txt", "shaders/furFS.txt");
+	
+	//Cel Shading
+	celprog = new tdl.programs.Program(loader,"shaders/celvs.txt","shaders/celfs.txt");
+	outlineprog = new tdl.programs.Program(loader,"shaders/outlinevs.txt","shaders/outlinefs.txt");
+	shipCelTex = new tdl.textures.Texture2D(loader, "assets/celshiptex.png");
+	celSampler = new tdl.textures.Texture2D(loader, "assets/celcolorsample.png");
 
 	//Shooting
 	for (var i = 0; i < 7; i++)
@@ -159,6 +169,10 @@ function main(){
 }
 
 function loaded(){
+	//Cel Shading
+	celSampler.setParameter(gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	celSampler.setParameter(gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
 	//Shooting
 	pSystem = new tdl.particles.ParticleSystem(gl, null, tdl.math.pseudoRandom);
 	Lsmoke = new setupSmoke(pSystem);
@@ -462,6 +476,12 @@ function draw(){
 			chromeship.pos = ship.pos;
 			drawShip(ship, noiseProg, false);
 		}
+		else if(document.getElementById('toon').checked) {
+			gl.cullFace(gl.FRONT);
+			drawShip(ship, outlineprog, false);
+			gl.cullFace(gl.BACK);
+			drawShip(ship, celprog, false);
+		}
 		else{
 			chromeship.pos = ship.pos;
 			drawShip(ship, prog1, false);
@@ -479,6 +499,12 @@ function draw(){
 		else if(document.getElementById('noise').checked) {
 			chromeship.pos = ship.pos;
 			drawShip(ship, noiseProg, false);
+		}
+		else if(document.getElementById('toon').checked) {
+			gl.cullFace(gl.FRONT);
+			drawShip(ship, outlineprog, false);
+			gl.cullFace(gl.BACK);
+			drawShip(ship, celprog, false);
 		}
 		else{
 			chromeship.pos = ship.pos;
@@ -751,6 +777,12 @@ function drawShip(theShip, prog, chrome){
 			prog.setUniform("cubetexture", cubetex);
 		}
 		camera.draw(prog);
+		
+		if(document.getElementById('toon').checked) {
+			prog.setUniform("lineThickness", 0.1);
+			prog.setUniform("celSampler", celSampler);
+			prog.setUniform("shipCelTex", shipCelTex);
+		}
 
 		theShip.draw(prog);
 	}

@@ -1,0 +1,28 @@
+attribute vec4 position;
+attribute vec4 texcoord;
+attribute vec4 normal;
+
+uniform mat4 worldMatrix;
+uniform mat4 viewProjMatrix;
+uniform mat4 scaleMatrix;
+uniform float lineThickness;
+uniform mat4 trans;
+
+uniform mat4 reflMatrix; // refl
+uniform vec4 mirrorPos; // refl
+
+varying vec4 v_texcoord;
+varying vec4 v_worldPos;
+varying vec4 v_normal;
+varying vec4 v_tangent;
+
+void main(){
+    vec4 p = position * worldMatrix;
+    vec4 n = normal * worldMatrix;
+	vec4 n_norm = normalize(n);
+	p = p + n_norm * lineThickness;
+    v_normal=n;
+    v_worldPos = p * trans;
+    v_texcoord=texcoord;
+    gl_Position = p * reflMatrix * trans * viewProjMatrix;
+}
