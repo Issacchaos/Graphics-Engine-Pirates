@@ -477,6 +477,7 @@ function draw(){
 			drawShip(ship, noiseProg, false);
 		}
 		else if(document.getElementById('toon').checked) {
+			chromeship.pos = ship.pos;
 			gl.cullFace(gl.FRONT);
 			drawShip(ship, outlineprog, false);
 			gl.cullFace(gl.BACK);
@@ -501,6 +502,7 @@ function draw(){
 			drawShip(ship, noiseProg, false);
 		}
 		else if(document.getElementById('toon').checked) {
+			chromeship.pos = ship.pos;
 			gl.cullFace(gl.FRONT);
 			drawShip(ship, outlineprog, false);
 			gl.cullFace(gl.BACK);
