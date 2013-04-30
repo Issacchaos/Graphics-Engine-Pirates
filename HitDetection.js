@@ -35,7 +35,7 @@ function HitDetection(obj1,obj2,rad1,rad2){
 						obj1.pos = tdl.add(obj1.pos,tdl.mul((dist-dlon)*.005,lon));
 							
 						if(obj1.pos[1] > 0 || obj1.pos[1] < 0){
-							obj1.pos[1] = 0;
+							obj1.pos[1] = 1;
 						}
 						update_camera();
 					}		
@@ -60,7 +60,7 @@ function HitDetection(obj1,obj2,rad1,rad2){
 						obj1.pos = tdl.add(obj1.pos,tdl.mul((dist-dlon)*.005,lon));
 						
 						if(obj1.pos[1] > 0 || obj1.pos[1] < 0){
-							obj1.pos[1] = 0;
+							obj1.pos[1] = 1;
 						}
 						update_camera();
 					}
