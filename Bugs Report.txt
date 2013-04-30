@@ -4,3 +4,8 @@ objects unless you apply an environment option. When camo or
 environment maps selected, ship is only object with texture.
 ( It works until you select shadows. So something in shadows is
      causing it to break.)
+
+
+
+2. Selecting Camo and Shadows at the same time causes the ship
+to be drawn with the clear color.
