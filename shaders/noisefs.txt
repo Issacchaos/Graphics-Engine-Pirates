@@ -140,7 +140,7 @@ void main(){
 			gl_FragColor = camoColor3;
 		}else{
 			gl_FragColor = camoColor4;
-	}
+		}
 	}
 	else if(any(bvec4(greaterThan(wPos.xy,vec2(1.0,1.0)), lessThan(wPos.xy, vec2(0.0,0.0))))){
 		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
@@ -148,6 +148,15 @@ void main(){
 	else if(z1 < 0.0 || z1 > (z2+0.005))
 	{
 		gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+	}
+	else if(n < -0.5){
+		gl_FragColor = camoColor1;
+	}else if(n < 0.0 && n > -0.5){
+		gl_FragColor = camoColor2;
+	}else if(n > 0.0 && n < 0.5){
+		gl_FragColor = camoColor3;
+	}else{
+		gl_FragColor = camoColor4;
 	}
     
     

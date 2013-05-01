@@ -489,6 +489,7 @@ function draw(){
 		}
 		drawNessie(kineprog,furprog);
 		drawOcean(prog2);
+		shadowFBO.texture.unbind();
     }
 	else{
 		shadow = false;
@@ -517,7 +518,7 @@ function draw(){
 	}
 	Shooting(prog1);
 	drawSky(skyprog);
-    shadowFBO.texture.unbind();
+    
 }
 
 function drawDepth(){
