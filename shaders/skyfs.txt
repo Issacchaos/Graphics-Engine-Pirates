@@ -40,7 +40,7 @@ void main(){
     
     vec4 basecolor;
 
-    basecolor.rgb = objc.rbg;
+    basecolor.rgb = objc.rgb;
 
     vec4 c = basecolor;
 
