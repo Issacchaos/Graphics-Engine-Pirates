@@ -163,7 +163,7 @@ function main(){
 	 //SKY
     sky = new Sky(loader);
     skyprog = new tdl.programs.Program(loader, "shaders/skyvs.txt", "shaders/skyfs.txt");
-    skytex = new tdl.CubeMap(loader, {urls:["assets/back.png", "assets/front.png", "assets/up.png", "assets/down.png", "assets/left.png", "assets/right.png"]});
+    skytex = new tdl.CubeMap(loader, {urls:["assets/right.jpg", "assets/left.jpg", "assets/up.jpg", "assets/bottom.jpg", "assets/front.jpg", "assets/back.jpg"]});
 	
 	loader.finish();
 }
