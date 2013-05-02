@@ -857,6 +857,7 @@ function drawNessie(prog, furprog){
 	nessie.draw(prog,1);
 	if(document.getElementById('fur').checked) {
 		Fur(furprog);
+		currframe = 0;
 	}
 }
 
